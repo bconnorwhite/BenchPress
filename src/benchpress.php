@@ -122,8 +122,9 @@ function parse($element) {
 }
 
 function newGroup($name) {
-  global $groups, $parentKeys, $filename;
+  global $groups, $parentKeys;
   $key = 'group_' . $name;
+  var_dump($name);
   $group = array(
     'key' => $key,
     'title' => toWords($name),
@@ -133,7 +134,7 @@ function newGroup($name) {
         array(
           'param' => 'page_template',
           'operator' => '==',
-          'value'=> "page-templates/$filename.php"
+          'value'=> "page-templates/$name.php"
         )
       )
     )
