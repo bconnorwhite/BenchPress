@@ -27,10 +27,12 @@ function createTheme($dirpath) {
   global $groups, $fields;
   exec('cp -R ' . base_path . " " . escapeshellarg(output_path));
   $files = scandir($dirpath);
+  $first = true;
   foreach($files as $file) {
     if(pathToFiletype($file) == "html") {
-      createTemplate($dirpath . "/" . $file, page_templates_path . basename($file, ".html") . ".php", true);
+      createTemplate($dirpath . "/" . $file, page_templates_path . basename($file, ".html") . ".php", $first);
     }
+    $first = false;
   }
   file_put_contents(acf_path, acf($groups, $fields));
 }
