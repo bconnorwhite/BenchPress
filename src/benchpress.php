@@ -96,9 +96,13 @@ function parse($element) {
           newGroup(getSuffix($attribute));
         }
       } else if($attribute->name == 'class') {
-        if($prefix == 'wp' && in_array($prefix, valid_wp)) {
+        if($prefix == 'wp') {
           $suffix = getSuffix($attribute);
-          return openTag($element, $suffix) . wpField($suffix) . closeTag($element, true);
+          if(in_array($suffix, valid_wp)) {
+            return openTag($element, $suffix) . wpField($suffix) . closeTag($element, true);
+          } else if($element->tagName == "ul") { //Menu
+            return wpMenu($suffix);
+          }
         } else if($prefix == 'acf') {
           $suffix = getSuffix($attribute);
           if($element->tagName == 'img') {
@@ -185,6 +189,11 @@ function getSuffix($attribute) {
 function wpField($field) {
   global $tab;
   return "\n" . tabs($tab) . "<?php the_" . $field . "(); ?>";
+}
+
+function wpMenu($location) {
+  global $tab;
+  return "\n" . tabs($tab) . "<?php wp_nav_menu(array('theme_location' => '" . $location . "')); ?>";
 }
 
 function acfField($field, $tag) {
