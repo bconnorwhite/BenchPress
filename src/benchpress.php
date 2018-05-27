@@ -3,6 +3,12 @@
 const valid_wp = ['content', 'title'];
 const base_path = __DIR__ . "/base/";
 const root_path = __DIR__ . "/../../";
+const output_path = root_path . "output/";
+const header_path = output_path . "header.php";
+const footer_path = output_path . "footer.php";
+const acf_path = output_path . "acf.php";
+const page_templates_path = output_path . "page-templates/";
+
 $groups = [];
 $fields = [];
 $tab;
@@ -13,30 +19,61 @@ if($argc > 1) {
   if(is_dir($input)) {
     createTheme($input);
   } else if(pathToFiletype($input) == "html") {
-    $template = createTemplate($input);
-    file_put_contents(root_path . "output.php", $template);
+    createTemplate($input, root_path . "output.php", false);
   }
 }
 
 function createTheme($dirpath) {
   global $groups, $fields;
-  $themePath = root_path . "output";
-  exec('cp -R ' . base_path . " " . escapeshellarg($themePath));
+  exec('cp -R ' . base_path . " " . escapeshellarg(output_path));
   $files = scandir($dirpath);
+  $first = true;
   foreach($files as $file) {
     if(pathToFiletype($file) == "html") {
-      $template = createTemplate($dirpath . "/" . $file);
-      file_put_contents($themePath . "/page-templates/" . basename($file, ".html") . ".php", $template);
+      createTemplate($dirpath . "/" . $file, page_templates_path . basename($file, ".html") . ".php", $first);
     }
+    $first = false;
   }
-  file_put_contents($themePath."/acf.php", acf($groups, $fields));
+  file_put_contents(acf_path, acf($groups, $fields));
 }
 
-function createTemplate($filepath) {
-  $header = "<?php\n/**\n * Template Name: " . toWords(pathToFilename($filepath)) . " Page Template\n */\nget_header(); ?>";
+function createTemplate($filepath, $output, $headerFooter) {
+  if($headerFooter) {
+    createHeader($filepath);
+    createFooter($filepath);
+  }
+  $start = "<?php\n/**\n * Template Name: " . toWords(pathToFilename($filepath)) . " Page Template\n */\nget_header(); ?>";
   $main = getMain($filepath);
-  $footer = "<?php get_footer(); ?>\n";
-  return $header . $main . $footer;
+  $end = "<?php get_footer(); ?>\n";
+  file_put_contents($output, $start . $main . $end);
+}
+
+function createHeader($filepath) {
+  global $tab;
+  $tab = 3;
+  $header = parseDOMById($filepath, 'header');
+  file_put_contents(header_path, $header, FILE_APPEND);
+}
+
+function createFooter($filepath) {
+  global $tab;
+  $tab = 2;
+  $footer = parseDOMById($filepath, 'footer') . file_get_contents(footer_path);
+  file_put_contents(footer_path, $footer);
+}
+
+function getMain($filepath) {
+  global $tab, $parentKeys;
+  $tab = 0;
+  $parentKeys = [];
+  return parseDOMById($filepath, 'main');
+}
+
+function parseDOMById($filepath, $id) {
+  $dom = new DOMDocument;
+  $dom->loadHTMLFile($filepath);
+  cleanDOM($dom);
+  return parse($dom->getElementById($id)) . "\n";
 }
 
 function cleanDOM($dom) {
@@ -47,16 +84,6 @@ function cleanDOM($dom) {
       $node->parentNode->removeChild($node);
     }
   }
-}
-
-function getMain($filepath) {
-  global $tab, $parentKeys;
-  $tab = 0;
-  $parentKeys = [];
-  $dom = new DOMDocument;
-  $dom->loadHTMLFile($filepath);
-  cleanDOM($dom);
-  return parse($dom->getElementById('main')) . "\n";
 }
 
 function pathToFiletype($path) {
@@ -97,9 +124,13 @@ function parse($element) {
           newGroup(getSuffix($attribute));
         }
       } else if($attribute->name == 'class') {
-        if($prefix == 'wp' && in_array($prefix, valid_wp)) {
+        if($prefix == 'wp') {
           $suffix = getSuffix($attribute);
-          return openTag($element, $suffix) . wpField($suffix) . closeTag($element, true);
+          if(in_array($suffix, valid_wp)) {
+            return openTag($element, $suffix) . wpField($suffix) . closeTag($element, true);
+          } else if($element->tagName == "ul") { //Menu
+            return wpMenu($suffix);
+          }
         } else if($prefix == 'acf') {
           $suffix = getSuffix($attribute);
           if($element->tagName == 'img') {
@@ -114,7 +145,7 @@ function parse($element) {
         }
       }
     }
-    return openTag($element, $suffix) . parseChildren($element) . closeTag($element, false);
+    return openTag($element, NULL) . parseChildren($element) . closeTag($element, false);
   } else if(isset($element->wholeText)) { //Text
     return $element->wholeText;
   } else {
@@ -125,7 +156,6 @@ function parse($element) {
 function newGroup($name) {
   global $groups, $parentKeys;
   $key = 'group_' . $name;
-  var_dump($name);
   $group = array(
     'key' => $key,
     'title' => toWords($name),
@@ -186,6 +216,11 @@ function getSuffix($attribute) {
 function wpField($field) {
   global $tab;
   return "\n" . tabs($tab) . "<?php the_" . $field . "(); ?>";
+}
+
+function wpMenu($location) {
+  global $tab;
+  return "\n" . tabs($tab) . "<?php wp_nav_menu(array('theme_location' => '" . $location . "')); ?>";
 }
 
 function acfField($field, $tag) {

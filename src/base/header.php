@@ -14,9 +14,3 @@
         <?php wp_head(); ?>
     </head>
     <body>
-      <header>
-        <div class="wrap">
-          <img src="<?php echo get_template_directory_uri() . '/img/logo.png'; ?>" />
-          <?php wp_nav_menu(array('theme_location' => 'header-menu')); ?>
-        </div>
-      </header>
