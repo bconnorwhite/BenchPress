@@ -15,7 +15,7 @@ $groups = [];
 $fields = [];
 $tab;
 $parentKeys;
-
+$inRepeater = false;
 if($argc > 1) {
   $input = $argv[1];
   $domain;
@@ -242,7 +242,7 @@ function wpMenu($location) {
 function acfField($field, $tag) {
   global $tab;
   addField($field, $tag);
-  return "\n" . tabs($tab) . "<?php if(get_field('" . $field . "') !== '') { the_field('" . $field . "')['title']; } ?>";
+  return "\n" . tabs($tab) . ifACFExists($field, "echo the_" . getSub() . "field('" . $field . "')['title']");
 }
 
 function addField($field, $tag) {
@@ -265,7 +265,8 @@ function addField($field, $tag) {
 }
 
 function acfRepeater($field) {
-  global $tab, $fields, $parentKeys;
+  global $tab, $fields, $parentKeys, $inRepeater;
+  $inRepeater = true;
   $key = 'field_' . $field;
   array_push($fields, array(
     'key' => $key,
@@ -293,8 +294,8 @@ function openTag($element, $field) {
   $content = "\n" . tabs($tab) . "<" . $element->tagName;
   foreach($element->attributes as $attribute) {
     if($field && $attribute->name == 'href') {
-      $content .= " href=\"<?php if(get_field('" . $field . "') !== '') { echo get_field('" . $field . "')['url']}?>\"";
-      $content .= " target=\"<?php if(get_field('" . $field ."') !== '') { echo get_field('" . $field . "')['target']}?>\"";
+      $content .= " href=\"" . ifACFExists($field, "echo the_" . getSub() . "field('" . $field . "')['url']") . "\"";
+      $content .= " target=\"" . ifACFExists($field, "echo the_" . getSub() . "field('" . $field . "')['target']") . "\"";
     } else {
       $content .= " " . $attribute->name . "='" . $attribute->value . "'";
     }
@@ -312,11 +313,11 @@ function closeTag($element, $newline) {
 
 //For single tags, i.e. <img />
 function singleTag($element, $field) {
-  global $tab;
+  global $tab, $inRepeater;
   $content = "\n" . tabs($tab) . "<" . $element->tagName;
   foreach($element->attributes as $attribute) {
     if($field && $attribute->name == 'src') {
-      $content .= " src=\"<?php if(get_field('" . $field . "') !== '') { echo the_field('" . $field . "')}?>\"";
+      $content .= " src=\"" . ifACFExists($field, "echo the_" . getSub() . "field('" . $field . "')") . "\"";
       addField($field, $element->tagName);
     } else {
       $content .= " " . $attribute->name . "='" . $attribute->value . "'";
@@ -331,4 +332,15 @@ function tabs($n) {
     $ret .= "\t";
   }
   return $ret;
+}
+
+function ifACFExists($field, $content) {
+  global $inRepeater;
+  $sub = $inRepeater ? "sub_" : "";
+ return  "<?php if(get_" . getSub() . "field('" . $field . "') !== '') { " . $content . "}?>";
+}
+
+function getSub() {
+  global $inRepeater;
+  return $inRepeater ? "sub_" : "";
 }
