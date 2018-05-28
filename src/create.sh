@@ -26,13 +26,17 @@ if [[ $# -gt 0 ]]; then
       wp plugin delete hello
       wp theme delete twentyfifteen
       wp theme delete twentysixteen
-      wp theme delete twentyseventeen
+      pwd
+      exit 1
     else
       echo "Site already exists"
+      exit 0
     fi
   else
     echo "Invalid domain"
+    exit 0
   fi
 else
   echo "usage: create.sh [environment] [domain] [admin_user] [admin_email]"
+  exit 0
 fi

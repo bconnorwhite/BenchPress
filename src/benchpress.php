@@ -12,6 +12,7 @@ const footer_path = output_path . "footer.php";
 const page_templates_path = output_path . "page-templates/";
 const inc_path = output_path . "inc/";
 const acf_path = inc_path . "acf.php";
+const theme_relative = "/wp-content/themes/";
 
 $groups = [];
 $fields = [];
@@ -29,7 +30,7 @@ if($argc > 1) {
     createSite($input, $domain, $username, $email);
   } else if(is_dir($input)) {
     createSite($input, 'test.com', 'Connor', 'connor.bcw@gmail.com');
-    //createTheme($input);
+    //createTheme($input, output_path);
   } else if(pathToFiletype($input) == "html") {
     createTemplate($input, root_path . "output.php", false);
   }
@@ -40,15 +41,19 @@ function saveProfile($username, $email) {
 }
 
 function createSite($dirpath, $domain, $username, $email) {
-  createTheme($dirpath);
   if(isset($domain) && isset($username) && isset($email)) {
-    exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email));
+    $out;
+    $retval = 0;
+    $site = exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email), $out, $retval);
+    if($retval == 1) {
+      createTheme($dirpath, $site . theme_relative . $domain);
+    }
   }
 }
 
-function createTheme($dirpath) {
+function createTheme($dirpath, $output) {
   global $groups, $fields;
-  exec('cp -R ' . base_path . " " . escapeshellarg(output_path));
+  exec('cp -R ' . base_path . " " . escapeshellarg($output));
   $files = scandir($dirpath);
   $first = true;
   foreach($files as $file) {
