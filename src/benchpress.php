@@ -1,6 +1,5 @@
 <?php
 
-const env = 'local';
 const valid_wp = ['content', 'title'];
 
 const base_path = __DIR__ . "/base/";
@@ -19,6 +18,7 @@ $fields = [];
 $tab;
 $parentKeys;
 $inRepeater = false;
+
 if($argc > 1) {
   $input = $argv[1];
   if($argc > 4) {
@@ -28,7 +28,8 @@ if($argc > 1) {
     saveProfile($username, $email);
     createSite($input, $domain, $username, $email);
   } else if(is_dir($input)) {
-    createTheme($input);
+    createSite($input, 'test.com', 'Connor', 'connor.bcw@gmail.com');
+    //createTheme($input);
   } else if(pathToFiletype($input) == "html") {
     createTemplate($input, root_path . "output.php", false);
   }
@@ -41,7 +42,7 @@ function saveProfile($username, $email) {
 function createSite($dirpath, $domain, $username, $email) {
   createTheme($dirpath);
   if(isset($domain) && isset($username) && isset($email)) {
-    exec(create_path . " " . escapeshellarg(env) . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email));
+    exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email));
   }
 }
 
