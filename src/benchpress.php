@@ -2,12 +2,14 @@
 
 const valid_wp = ['content', 'title'];
 const base_path = __DIR__ . "/base/";
-const root_path = __DIR__ . "/../../";
-const output_path = root_path . "output/";
+const root_path = __DIR__ . "/../";
+const output_path = root_path . "../output/";
+const profile_path = root_path . "profile";
 const header_path = output_path . "header.php";
 const footer_path = output_path . "footer.php";
-const acf_path = output_path . "acf.php";
 const page_templates_path = output_path . "page-templates/";
+const inc_path = output_path . "inc/";
+const acf_path = inc_path . "acf.php";
 
 $groups = [];
 $fields = [];
@@ -16,11 +18,24 @@ $parentKeys;
 
 if($argc > 1) {
   $input = $argv[1];
+  $domain;
+  $username;
+  $email;
+  if($argc > 4) {
+    $domain = $argv[2];
+    $username = $argv[3];
+    $email = $argv[4];
+    saveProfile($username, $email);
+  }
   if(is_dir($input)) {
     createTheme($input);
   } else if(pathToFiletype($input) == "html") {
     createTemplate($input, root_path . "output.php", false);
   }
+}
+
+function saveProfile($username, $email) {
+  file_put_contents(profile_path, $username . "\n" . $email);
 }
 
 function createTheme($dirpath) {
@@ -42,7 +57,8 @@ function createTemplate($filepath, $output, $headerFooter) {
     createHeader($filepath);
     createFooter($filepath);
   }
-  $start = "<?php\n/**\n * Template Name: " . toWords(pathToFilename($filepath)) . " Page Template\n */\nget_header(); ?>";
+  $postTitle = toWords(pathToFilename($filepath));
+  $start = "<?php\n/**\n * Template Name: " . $postTitle . " Page Template\n */\nget_header(); ?>";
   $main = getMain($filepath);
   $end = "<?php get_footer(); ?>\n";
   file_put_contents($output, $start . $main . $end);

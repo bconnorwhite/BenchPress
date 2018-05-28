@@ -38,4 +38,4 @@ function enqueue(){
 add_action( 'wp_enqueue_scripts', 'enqueue' );
 
 /* Advanced Custom Fields ---------- */
-include(get_template_directory() . '/acf.php');
+include(get_template_directory() . 'inc/acf.php');
