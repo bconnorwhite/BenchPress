@@ -1,8 +1,11 @@
 <?php
 
+const env = 'local';
 const valid_wp = ['content', 'title'];
+
 const base_path = __DIR__ . "/base/";
 const root_path = __DIR__ . "/../";
+const create_path = __DIR__ . "/create.sh";
 const output_path = root_path . "../output/";
 const profile_path = root_path . "profile";
 const header_path = output_path . "header.php";
@@ -18,16 +21,13 @@ $parentKeys;
 $inRepeater = false;
 if($argc > 1) {
   $input = $argv[1];
-  $domain;
-  $username;
-  $email;
   if($argc > 4) {
     $domain = $argv[2];
     $username = $argv[3];
     $email = $argv[4];
     saveProfile($username, $email);
-  }
-  if(is_dir($input)) {
+    createSite($input, $domain, $username, $email);
+  } else if(is_dir($input)) {
     createTheme($input);
   } else if(pathToFiletype($input) == "html") {
     createTemplate($input, root_path . "output.php", false);
@@ -36,6 +36,13 @@ if($argc > 1) {
 
 function saveProfile($username, $email) {
   file_put_contents(profile_path, $username . "\n" . $email);
+}
+
+function createSite($dirpath, $domain, $username, $email) {
+  createTheme($dirpath);
+  if(isset($domain) && isset($username) && isset($email)) {
+    exec(create_path . " " . escapeshellarg(env) . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email));
+  }
 }
 
 function createTheme($dirpath) {
