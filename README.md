@@ -15,3 +15,5 @@ Add documentation for how to use here:
 OOP-ify benchpress.php, use includes to clean up
 
 Rename variables/consts, don't just call everything output...
+
+Keep track of password somehow

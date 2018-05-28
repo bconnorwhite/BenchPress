@@ -46,8 +46,9 @@ function createSite($dirpath, $domain, $username, $email) {
   $retval = 0;
   $site = exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email), $out, $retval);
   if($retval == 1) {
-    createTheme($dirpath, $site . theme_relative . $domain . "/", $domain);
+    $pages = createTheme($dirpath, $site . theme_relative . $domain . "/", $domain);
     //activateTheme($site, $domain);
+    createPages($pages, $site);
   }
 }
 
@@ -60,10 +61,13 @@ function createTheme($dirpath, $output, $themeName) {
   exec('cp -R ' . base_path . " " . escapeshellarg($output));
   $files = scandir($dirpath);
   $first = true;
+  $pages = [];
   foreach($files as $file) {
     $filepath = $dirpath . $file;
     if(pathToFiletype($file) == "html") {
-      createTemplate($filepath, $output . page_templates . basename($file, ".html") . ".php");
+      $page = basename($file, ".html");
+      createTemplate($filepath, $output . page_templates . $page . ".php");
+      array_push($pages, toWords($page));
       if($first) {
         createHeader($filepath, $output . header);
         createFooter($filepath, $output . footer);
@@ -73,6 +77,16 @@ function createTheme($dirpath, $output, $themeName) {
   }
   file_put_contents($output . acf, acf($groups, $fields));
   file_put_contents($output . style, "/*\nTheme Name: " . $themeName . "\n*/");
+  return $pages;
+}
+
+function createPages($pages, $site) {
+  chdir($site);
+  exec('wp post delete $(wp post list --post_type=page --format=ids)');
+  exec('wp post delete $(wp post list --post_type=post --format=ids)');
+  foreach($pages as $page) {
+    exec("wp post create --post_title=" . escapeshellarg($page) . " --post_type=page --post_status=publish");
+  }
 }
 
 function createTemplate($filepath, $output) {
