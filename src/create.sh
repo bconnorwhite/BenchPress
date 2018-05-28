@@ -22,11 +22,12 @@ if [[ $# -gt 0 ]]; then
       WP_PASS="$(openssl rand -base64 12)"
       wp core install --url=http://$URL --title= --admin_user=$2 --admin_password=$WP_PASS --admin_email=$3
       #Clean up
-      wp plugin delete akismet #this isn't working for some reason...
-      wp plugin delete hello #this isn't working for some reason...
+      rm -rf wp-content/plugins/akismet
+      rm wp-content/plugins/hello.php
       wp theme delete twentyfifteen
       wp theme delete twentysixteen
-      pwd
+      array=($(pwd) $WP_PASS)
+      echo "${array[@]}"
       exit 1
     else
       echo "Site already exists"

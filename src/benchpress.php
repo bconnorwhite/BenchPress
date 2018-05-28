@@ -2,9 +2,19 @@
 
 const valid_wp = ['content', 'title'];
 
+const default_color = "\e[39m";
+const primary_color = "\e[96m";
+const secondary_color = "\e[95m";
+const prompt_color = "\e[93m";
+const success_color = "\e[92m";
+const failure_color = "\e[91m";
+
+const checkmark = "\xE2\x9C\x94";
+
 const base_path = __DIR__ . "/base/";
 const root_path = __DIR__ . "/../";
 const create_path = __DIR__ . "/create.sh";
+const delete_path = __DIR__ . "/delete.sh";
 const output_path = root_path . "../output/";
 const profile_path = root_path . "profile";
 const header = "header.php";
@@ -42,22 +52,49 @@ function saveProfile($username, $email) {
 }
 
 function createSite($dirpath, $domain, $username, $email) {
+  printLine("Creating site: " . colorString($domain, primary_color));
   $out;
   $retval = 0;
-  $site = exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email), $out, $retval);
+  $result = exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email), $out, $retval);
   if($retval == 1) {
+    $result = explode(" ", $result);
+    $site = $result[0];
     $pages = createTheme($dirpath, $site . theme_relative . $domain . "/", $domain);
-    //activateTheme($site, $domain);
+    activateTheme($site, $domain);
     createPages($pages, $site);
+    printLine("Username: " . colorString($username, secondary_color));
+    printLine("Password: " . colorString($result[1], secondary_color));
+  } else {
+    printLine(colorString($result, failure_color));
+    $line = readline(colorString("Overwrite (y/n)? ", prompt_color));
+    if($line == 'y' || $line == 'Y') {
+      $deleted = deleteSite($domain);
+      if($deleted == 1) {
+        createSite($dirpath, $domain, $username, $email);
+      }
+    }
   }
 }
 
+function deleteSite($domain) {
+  $out;
+  $retval = 0;
+  $result = exec(delete_path . " " . escapeshellarg($domain), $out, $retval);
+  if($retval == 0) {
+    echo $result;
+  }
+  return $retval;
+}
+
 function activateTheme($sitePath, $themeName) {
-  exec('cd ' . $sitePath . " & wp theme activate " . $themeName);
+  printLine("Activating theme: " . colorString($themeName, primary_color));
+  chdir($sitePath);
+  passthru("wp theme activate " . $themeName);
 }
 
 function createTheme($dirpath, $output, $themeName) {
   global $groups, $fields;
+  printLine("Creating theme: " . colorString($themeName, primary_color));
   exec('cp -R ' . base_path . " " . escapeshellarg($output));
   $files = scandir($dirpath);
   $first = true;
@@ -81,13 +118,29 @@ function createTheme($dirpath, $output, $themeName) {
   return $pages;
 }
 
-function createPages($pages, $site) {
+function colorString($string, $color) {
+  return $color . $string . "\e[39m";
+}
+
+function printLine($string) {
+  echo $string . "\n";
+}
+
+function deletePages($site) {
   chdir($site);
-  exec('wp post delete $(wp post list --post_type=page --format=ids) --force'); //Delete all pages
-  exec('wp post delete $(wp post list --post_type=post --format=ids) --force'); //Delete all posts
+  printLine("Deleting default pages...");
+  passthru('wp post delete $(wp post list --post_type=page --format=ids) --force'); //Delete default pages
+  passthru('wp post delete $(wp post list --post_type=post --format=ids) --force'); //Delete default posts
+}
+
+function createPages($pages, $site) {
+  deletePages($site);
+  printLine("Creating pages...");
+  chdir($site);
   foreach($pages as $page) {
     $id = exec("wp post create --post_title=" . escapeshellarg($page['name']) . " --post_type=page --post_status=publish --porcelain");
     exec("wp post meta add $id _wp_page_template " .  $page['template']);
+    printLine(colorString(checkmark, success_color) . " " . $page['name']);
   }
 }
 
