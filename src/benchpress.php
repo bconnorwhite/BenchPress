@@ -7,11 +7,12 @@ const root_path = __DIR__ . "/../";
 const create_path = __DIR__ . "/create.sh";
 const output_path = root_path . "../output/";
 const profile_path = root_path . "profile";
-const header_path = output_path . "header.php";
-const footer_path = output_path . "footer.php";
-const page_templates_path = output_path . "page-templates/";
-const inc_path = output_path . "inc/";
-const acf_path = inc_path . "acf.php";
+const header = "header.php";
+const footer = "footer.php";
+const page_templates = "page-templates/";
+const inc = "inc/";
+const acf = inc . "acf.php";
+const style = "style.css";
 const theme_relative = "/wp-content/themes/";
 
 $groups = [];
@@ -30,7 +31,7 @@ if($argc > 1) {
     createSite($input, $domain, $username, $email);
   } else if(is_dir($input)) {
     createSite($input, 'test.com', 'Connor', 'connor.bcw@gmail.com');
-    //createTheme($input, output_path);
+    //createTheme($input, output_path, $domain);
   } else if(pathToFiletype($input) == "html") {
     createTemplate($input, root_path . "output.php", false);
   }
@@ -41,35 +42,40 @@ function saveProfile($username, $email) {
 }
 
 function createSite($dirpath, $domain, $username, $email) {
-  if(isset($domain) && isset($username) && isset($email)) {
-    $out;
-    $retval = 0;
-    $site = exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email), $out, $retval);
-    if($retval == 1) {
-      createTheme($dirpath, $site . theme_relative . $domain);
-    }
+  $out;
+  $retval = 0;
+  $site = exec(create_path . " " . escapeshellarg($domain) . " " . escapeshellarg($username) . " " . escapeshellarg($email), $out, $retval);
+  if($retval == 1) {
+    createTheme($dirpath, $site . theme_relative . $domain . "/", $domain);
+    //activateTheme($site, $domain);
   }
 }
 
-function createTheme($dirpath, $output) {
+function activateTheme($sitePath, $themeName) {
+  exec('cd ' . $sitePath . " & wp theme activate " . $themeName);
+}
+
+function createTheme($dirpath, $output, $themeName) {
   global $groups, $fields;
   exec('cp -R ' . base_path . " " . escapeshellarg($output));
   $files = scandir($dirpath);
   $first = true;
   foreach($files as $file) {
+    $filepath = $dirpath . $file;
     if(pathToFiletype($file) == "html") {
-      createTemplate($dirpath . "/" . $file, page_templates_path . basename($file, ".html") . ".php", $first);
+      createTemplate($filepath, $output . page_templates . basename($file, ".html") . ".php");
+      if($first) {
+        createHeader($filepath, $output . header);
+        createFooter($filepath, $output . footer);
+        $first = false;
+      }
     }
-    $first = false;
   }
-  file_put_contents(acf_path, acf($groups, $fields));
+  file_put_contents($output . acf, acf($groups, $fields));
+  file_put_contents($output . style, "/*\nTheme Name: " . $themeName . "\n*/");
 }
 
-function createTemplate($filepath, $output, $headerFooter) {
-  if($headerFooter) {
-    createHeader($filepath);
-    createFooter($filepath);
-  }
+function createTemplate($filepath, $output) {
   $postTitle = toWords(pathToFilename($filepath));
   $start = "<?php\n/**\n * Template Name: " . $postTitle . " Page Template\n */\nget_header(); ?>";
   $main = getMain($filepath);
@@ -77,18 +83,18 @@ function createTemplate($filepath, $output, $headerFooter) {
   file_put_contents($output, $start . $main . $end);
 }
 
-function createHeader($filepath) {
+function createHeader($filepath, $output) {
   global $tab;
   $tab = 3;
   $header = parseDOMById($filepath, 'header');
-  file_put_contents(header_path, $header, FILE_APPEND);
+  file_put_contents($output, $header, FILE_APPEND);
 }
 
-function createFooter($filepath) {
+function createFooter($filepath, $output) {
   global $tab;
   $tab = 2;
-  $footer = parseDOMById($filepath, 'footer') . file_get_contents(footer_path);
-  file_put_contents(footer_path, $footer);
+  $footer = parseDOMById($filepath, 'footer') . file_get_contents($output);
+  file_put_contents($output, $footer);
 }
 
 function getMain($filepath) {
