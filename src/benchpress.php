@@ -66,8 +66,9 @@ function createTheme($dirpath, $output, $themeName) {
     $filepath = $dirpath . $file;
     if(pathToFiletype($file) == "html") {
       $page = basename($file, ".html");
-      createTemplate($filepath, $output . page_templates . $page . ".php");
-      array_push($pages, toWords($page));
+      $template = page_templates . $page . ".php";
+      createTemplate($filepath, $output . $template);
+      array_push($pages, array("name" => toWords($page), "template" => $template));
       if($first) {
         createHeader($filepath, $output . header);
         createFooter($filepath, $output . footer);
@@ -82,10 +83,11 @@ function createTheme($dirpath, $output, $themeName) {
 
 function createPages($pages, $site) {
   chdir($site);
-  exec('wp post delete $(wp post list --post_type=page --format=ids)');
-  exec('wp post delete $(wp post list --post_type=post --format=ids)');
+  exec('wp post delete $(wp post list --post_type=page --format=ids) --force'); //Delete all pages
+  exec('wp post delete $(wp post list --post_type=post --format=ids) --force'); //Delete all posts
   foreach($pages as $page) {
-    exec("wp post create --post_title=" . escapeshellarg($page) . " --post_type=page --post_status=publish");
+    $id = exec("wp post create --post_title=" . escapeshellarg($page['name']) . " --post_type=page --post_status=publish --porcelain");
+    exec("wp post meta add $id _wp_page_template " .  $page['template']);
   }
 }
 
