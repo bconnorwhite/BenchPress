@@ -2,6 +2,8 @@
 
 const valid_wp = ['content', 'title'];
 
+include_once('section.php');
+
 class Template {
 
   var $inputPath;
@@ -34,6 +36,10 @@ class Template {
 
   function getName() {
     return toWords(basename($this->path, ".php"));
+  }
+
+  function getFileName() {
+    return basename($this->path);
   }
 
   function setName($name) {
@@ -97,7 +103,6 @@ class Template {
   }
 
   private function createSection($element) {
-    include_once('section.php');
     $section = new Section($element);
     if($section->setPath($this->sectionDir)) {
       foreach($this->sections as $s) {

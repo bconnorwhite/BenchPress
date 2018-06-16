@@ -40,6 +40,10 @@ class Section {
     return "group-" . basename($this->path, ".php");
   }
 
+  function getName() {
+    return toWords(basename($this->path, ".php"));
+  }
+
   function getFields() {
     return $this->fields;
   }
@@ -115,15 +119,15 @@ class Section {
 
   private function acfField($field, $tag) {
     $this->addField($field, $tag);
-    return "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['title']");
+    return "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['title'];");
   }
 
   private function openTag($element, $field) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'href') {
-        $content .= " href=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['url']") . "\"";
-        $content .= " target=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['target']") . "\"";
+        $content .= " href=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['url'];") . "\"";
+        $content .= " target=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['target'];") . "\"";
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
@@ -151,7 +155,7 @@ class Section {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'src') {
-        $content .= " src=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')") . "\"";
+        $content .= " src=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "');") . "\"";
         $this->addField($field, $element->tagName);
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";

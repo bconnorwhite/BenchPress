@@ -4,6 +4,8 @@ const create_script_path = scripts_path . "/create.sh";
 const delete_script_path = scripts_path . "/delete.sh";
 const theme_relative = "/wp-content/themes/";
 
+include('theme.php');
+
 class Site {
 
   var $inputPath;
@@ -55,17 +57,22 @@ class Site {
   }
 
   function createTheme($themeName) {
-    include('theme.php');
     $outputPath = $this->path . theme_relative . $themeName;
     $this->theme = new Theme($themeName, $this->inputPath, $outputPath);
     $this->theme->create();
   }
 
   function activateTheme() {
-    if(isset($this->sitePath)) {
-      chdir($sitePath);
-      passthru("wp theme activate " . $this->themeName);
+    if(isset($this->path)) {
+      chdir($this->path);
+      passthru("wp theme activate " . $this->theme->name);
     }
+  }
+
+  function clean() {
+    chdir($this->path);
+    passthru('wp post delete $(wp post list --post_type=page --format=ids) --force'); //Delete default pages
+    passthru('wp post delete $(wp post list --post_type=post --format=ids) --force'); //Delete default posts
   }
 
 }

@@ -50,12 +50,14 @@ function createSite($inputPath, $domain, $username, $email) {
   $site = new Site($inputPath, $domain, $username, $email);
   $createResult = $site->create();
   if($createResult == 1) {
+    printLine("Cleaning...");
+    $site->clean();
     $themeName = domainToName($domain);
     printLine("Creating theme: " . colorString($themeName, primary_color));
     $site->createTheme($themeName);
-    /*printLine("Activating theme: " . colorString($themeName, primary_color));
+    printLine("Activating theme: " . colorString($themeName, primary_color));
     $site->activateTheme();
-    $site->createPages();*/
+    //TODO: build pages (content)
     printLine("Username: " . colorString($site->username, secondary_color));
     printLine("Password: " . colorString($site->password, secondary_color));
     return 1;
