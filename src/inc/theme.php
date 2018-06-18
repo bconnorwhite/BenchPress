@@ -6,6 +6,7 @@ const section_dir = "/section-templates/";
 const acf_path = "/inc/acf.php";
 
 include_once('template.php');
+include_once('page.php');
 
 class Theme {
 
@@ -13,6 +14,7 @@ class Theme {
   var $outputPath;
   var $inputPath;
   var $templates;
+  var $pages;
 
   function __construct($name, $inputPath, $outputPath) {
     $this->name = $name;
@@ -35,10 +37,14 @@ class Theme {
           $template->create($this->outputPath . section_dir);
           array_push($this->templates, $template);
         }
+        $page = new Page($filePath, $template);
+        array_push($this->pages, $page);
       }
     }
     $this->buildACFMapping();
   }
+
+
 
   private function isDuplicate($template) {
     //Check that output path doesn't conflict with any exisiting template

@@ -57,7 +57,8 @@ function createSite($inputPath, $domain, $username, $email) {
     $site->createTheme($themeName);
     printLine("Activating theme: " . colorString($themeName, primary_color));
     $site->activateTheme();
-    //TODO: build pages (content)
+    printLine("Building content...");
+    $site->buildContent();
     printLine("Username: " . colorString($site->username, secondary_color));
     printLine("Password: " . colorString($site->password, secondary_color));
     return 1;
