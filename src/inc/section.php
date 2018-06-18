@@ -117,17 +117,21 @@ class Section {
     return "\n" . $this->tabs() . "<?php wp_nav_menu(array('theme_location' => '" . $location . "')); ?>";
   }
 
+  private function getFieldName($field) {
+    return $this->getGroup() . "-" . $field;
+  }
+
   private function acfField($field, $tag) {
     $this->addField($field, $tag);
-    return "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['title'];");
+    return "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['title'];");
   }
 
   private function openTag($element, $field) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'href') {
-        $content .= " href=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['url'];") . "\"";
-        $content .= " target=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "')['target'];") . "\"";
+        $content .= " href=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['url'];") . "\"";
+        $content .= " target=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['target'];") . "\"";
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
@@ -137,7 +141,7 @@ class Section {
   }
 
   private function ifACFExists($field, $content) {
-    return  "<?php if(get_" . $this->getSub() . "field('" . $field . "') !== '') { " . $content . "}?>";
+    return  "<?php if(get_" . $this->getSub() . "field('" . $this->getFieldName($field) . "') !== '') { " . $content . "}?>";
   }
 
   private function wpField($field) {
@@ -155,7 +159,7 @@ class Section {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'src') {
-        $content .= " src=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $field . "');") . "\"";
+        $content .= " src=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "');") . "\"";
         $this->addField($field, $element->tagName);
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
@@ -170,9 +174,9 @@ class Section {
 
   private function addField($field, $tag) {
     $settings = array(
-      'key' => 'field_' . $field,
+      'key' => $this->getGroup() . "-field-" . $field,
       'label' => toWords($field),
-      'name' => $field,
+      'name' => $this->getFieldName($field),
       'type' => 'text',
       'parent' => $this->getGroup(),
     );
@@ -188,17 +192,17 @@ class Section {
 
   private function acfRepeater($field) {
     $this->inRepeater = true;
-    $key = 'field_' . $field;
+    $key = $this->getGroup() . '-field-' . $field;
     array_push($this->fields, array(
       'key' => $key,
       'label' => toWords($field),
-      'name' => $field,
+      'name' => $this->getFieldName($field),
       'type' => 'repeater',
       'parent' => $this->getGroup(),
     ));
-    $retval = "\n" . $this->tabs() . "<?php if(get_field('" . $field . "') !== '') {" . "\n";
+    $retval = "\n" . $this->tabs() . "<?php if(get_field('" . $this->getFieldName($field) . "') !== '') {" . "\n";
     $this->tab+=1;
-    $retval .= $this->tabs() . "while(have_rows('" . $field . "')) { the_row(); ?>";
+    $retval .= $this->tabs() . "while(have_rows('" . $this->getFieldName($field) . "')) { the_row(); ?>";
     $this->tab+=1;
     return $retval;
   }
