@@ -1,6 +1,6 @@
 <?php
 
-const valid_wp = ['content', 'title'];
+const valid_wp = ['title'];
 
 include_once('section.php');
 
@@ -12,12 +12,9 @@ class Template {
   var $tab;
   var $sections;
 
-  function __construct() {
+  function __construct($inputPath, $outputDir) {
     $this->tab = 0;
     $this->sections = [];
-  }
-
-  function setPath($inputPath, $outputDir) {
     $this->inputPath = $inputPath;
     $dom = $this->getDOM($inputPath);
     $id = $this->getTemplateID($dom);

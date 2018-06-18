@@ -7,9 +7,12 @@ class Section {
   var $fields;
   var $tab;
   var $inRepeater;
+  var $meta;
 
   function __construct($element) {
     $this->element = $element;
+    $this->fields = [];
+    $this->meta = [];
   }
 
   function setPath($outputDir) {
@@ -65,10 +68,10 @@ class Section {
             $suffix = getSuffix($attribute->value);
             if($element->tagName == 'img') {
               return $this->singleTag($element, $suffix);
-            } if($element->tagName !== 'div') {
-              return $this->openTag($element, $suffix) . $this->acfField($suffix, $element->tagName) . $this->closeTag($element, true);
+            } if($element->tagName !== 'div') { //Normal acf field
+              return $this->openTag($element, $suffix) . $this->acfField($suffix, $element) . $this->closeTag($element, true);
             } else if($this->isFirstRepeater($element, $suffix)) { //First acf repeater div
-                return $this->acfRepeater($suffix) . $this->openTag($element, $suffix) . $this->parseChildren($element) . $this->closeTag($element, false) . $this->acfRepeaterClose();
+              return $this->acfRepeater($suffix) . $this->openTag($element, $suffix) . $this->parseChildren($element) . $this->closeTag($element, false) . $this->acfRepeaterClose();
             } else { //Not first acf repeater divs
               return "";
             }
@@ -121,8 +124,19 @@ class Section {
     return $this->getGroup() . "-" . $field;
   }
 
-  private function acfField($field, $tag) {
-    $this->addField($field, $tag);
+  private function acfField($field, $element) {
+    $this->addField($field, $element->tagName);
+    if($element->tagName == "a") {
+      $url = "";
+      foreach($element->attributes as $attribute) {
+        if($attribute->name == 'href') {
+          $url = $attribute->value;
+        }
+      }
+      array_push($this->meta, array("key"=>$this->getFieldName($field), "value"=>serialize(array("title"=>$element->textContent, "url"=>$url))));
+    } else {
+      array_push($this->meta, array("key"=>$this->getFieldName($field), "value"=>$element->textContent));
+    }
     return "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['title'];");
   }
 

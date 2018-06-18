@@ -61,7 +61,7 @@ class Site {
   function createTheme($themeName) {
     $outputPath = $this->path . theme_relative . $themeName;
     $this->theme = new Theme($themeName, $this->inputPath, $outputPath);
-    $this->theme->create();
+    //$this->theme->create();
   }
 
   function activateTheme() {
@@ -85,8 +85,18 @@ class Site {
 
   private function buildPage($page) {
     chdir($this->path);
+    //Create actual page
     $id = exec("wp post create --post_title=" . escapeshellarg($page->getName()) . " --post_type=page --post_status=publish --porcelain");
+    //Set page template
     exec("wp post meta add $id _wp_page_template " .  escapeshellarg("page-templates/" . basename($page->template->path)));
+    //Set content meta
+    foreach($page->template->sections as $section) {
+      foreach($section->meta as $meta) {
+        if(isset($meta['key']) && isset($meta['value'])) {
+          exec("wp post meta add $id " . escapeshellarg($meta['key']) . " " . escapeshellarg($meta['value']));
+        }
+      }
+    }
     printLine(colorString(checkmark, success_color) . " " . $page->getName());
   }
 

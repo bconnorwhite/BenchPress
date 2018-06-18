@@ -22,29 +22,28 @@ class Theme {
     $this->outputPath = $outputPath;
     $this->templates = [];
     $this->pages = [];
+    $this->create();
   }
 
-  function create() {
+  private function create() {
     //Copy base theme to site themes directory
     exec('cp -R ' . base_path . " " . escapeshellarg($this->outputPath));
     $files = scandir($this->inputPath);
     foreach($files as $file) { //Convert each file in input directory to template
       $filePath = $this->inputPath . $file;
       if(pathinfo($file, PATHINFO_EXTENSION) == "html") { //Check that file is valid
-        $template = new Template();
-        $template->setPath($filePath, $this->outputPath . page_dir);
-        if(!$this->isDuplicate($template)) {
-          $template->create($this->outputPath . section_dir);
-          array_push($this->templates, $template);
+        $templateDir = $this->outputPath . page_dir;
+        $sectionDir = $this->outputPath . section_dir;
+        $page = new Page($filePath, $templateDir, $sectionDir);
+        if(!$this->isDuplicate($page->template)) {
+          $page->createTemplate();
+          array_push($this->templates, $page->template);
         }
-        $page = new Page($filePath, $template);
         array_push($this->pages, $page);
       }
     }
     $this->buildACFMapping();
   }
-
-
 
   private function isDuplicate($template) {
     //Check that output path doesn't conflict with any exisiting template
