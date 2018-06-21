@@ -8,17 +8,17 @@ class Template {
 
   var $inputPath;
   var $path;
+  var $site;
   var $sectionDir;
   var $tab;
   var $sections;
 
-  function __construct($inputPath, $outputDir) {
+  function __construct($inputPath, $outputDir, $site) {
+    $this->inputPath = $inputPath;
+    $this->path = $this->getPath($inputPath, $outputDir);
+    $this->site = $site;
     $this->tab = 0;
     $this->sections = [];
-    $this->inputPath = $inputPath;
-    $dom = $this->getDOM($inputPath);
-    $id = $this->getTemplateID($dom);
-    $this->path = $outputDir . getSuffix($id) . ".php";
   }
 
   function create($sectionDir) {
@@ -41,6 +41,16 @@ class Template {
 
   function setName($name) {
     $this->name = $name;
+  }
+
+  /* ----------
+  * Private Functions
+  ---------- */
+
+  private function getPath($inputPath, $outputDir) {
+    $dom = $this->getDOM($inputPath);
+    $id = $this->getTemplateID($dom);
+    return $outputDir . getSuffix($id) . ".php";
   }
 
   private function getTemplate($inputPath) {
@@ -100,7 +110,7 @@ class Template {
   }
 
   private function createSection($element) {
-    $section = new Section($element);
+    $section = new Section($element, $this->site);
     if($section->setPath($this->sectionDir)) {
       foreach($this->sections as $s) {
         if($s->path == $section->path) {

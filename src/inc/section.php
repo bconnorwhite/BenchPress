@@ -3,14 +3,17 @@
 class Section {
 
   var $element;
+  var $site;
   var $path;
   var $fields;
-  var $tab;
-  var $inRepeater;
   var $meta;
 
-  function __construct($element) {
+  private $tab;
+  private $inRepeater;
+
+  function __construct($element, $site) {
     $this->element = $element;
+    $this->site = $site;
     $this->fields = [];
     $this->meta = [];
   }
@@ -51,6 +54,10 @@ class Section {
     return $this->fields;
   }
 
+  /* ----------
+  * Private Functions
+  ---------- */
+
   private function parse($element) {
     if(isset($element->tagName)) { //Tag
       foreach($element->attributes as $attribute) {
@@ -67,7 +74,7 @@ class Section {
           } else if($prefix == 'acf') {
             $suffix = getSuffix($attribute->value);
             if($element->tagName == 'img') {
-              return $this->singleTag($element, $suffix);
+              return $this->acfImgTag($element, $suffix);
             } if($element->tagName !== 'div') { //Normal acf field
               return $this->openTag($element, $suffix) . $this->acfField($suffix, $element) . $this->closeTag($element, true);
             } else if($this->isFirstRepeater($element, $suffix)) { //First acf repeater div
@@ -78,7 +85,11 @@ class Section {
           }
         }
       }
-      return $this->openTag($element, NULL) . $this->parseChildren($element) . $this->closeTag($element, false);
+      if($element->tagName == 'img') {
+        return $this->imgTag($element);
+      } else {
+        return $this->openTag($element, NULL) . $this->parseChildren($element) . $this->closeTag($element, false);
+      }
     } else if(isset($element->wholeText)) { //Text
       return $element->wholeText;
     } else {
@@ -168,18 +179,36 @@ class Section {
     return ($newline ? "\n" . $this->tabs() : "") . "</" . $element->tagName . ">";
   }
 
-  //For single tags, i.e. <img />
-  private function singleTag($element, $field) {
+  private function imgTag($element) {
+    global $sourceDir;
+    $content = "<img src=";
+    foreach($element->attributes as $attribute) {
+      if($attribute->name == 'src') {
+        /*echo($sourceDir . $attribute->value);
+        echo("\n");
+        echo file_exists($sourceDir . $attribute->value);
+        echo("\n");*/
+      }
+    }
+  }
+
+  private function acfImgTag($element, $field) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'src') {
         $content .= " src=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "');") . "\"";
         $this->addField($field, $element->tagName);
+        //TODO: import image into WordPress
+        //TODO: add meta for that image
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
     }
     return $content . "/>";
+  }
+
+  private function importImage($path) {
+
   }
 
   private function getSub() {

@@ -2,13 +2,12 @@
 
 const create_script_path = scripts_path . "/create.sh";
 const delete_script_path = scripts_path . "/delete.sh";
-const theme_relative = "/wp-content/themes/";
+const themes_relative = "/wp-content/themes/";
 
 include_once('theme.php');
 
 class Site {
 
-  var $inputPath;
   var $domain;
   var $username;
   var $email;
@@ -17,20 +16,11 @@ class Site {
   var $theme;
   var $pages;
 
-  function __construct($inputPath, $domain, $username, $email) {
-    $this->inputPath = $inputPath;
+  function __construct($domain, $username, $email) {
     $this->domain = $domain;
     $this->username = $username;
     $this->email = $email;
     $this->pages = [];
-  }
-
-  function setPath($path) {
-    $this->path = $path;
-  }
-
-  function setPassword($password) {
-    $this->password = $password;
   }
 
   function create() {
@@ -39,8 +29,9 @@ class Site {
     $result = exec(create_script_path . " " . escapeshellarg($this->domain) . " " . escapeshellarg($this->username) . " " . escapeshellarg($this->email), $out, $retval);
     if($retval == 1) {
       $results = explode(" ", $result);
-      $this->setPath($results[0]);
-      $this->setPassword($results[1]);
+      $this->path = $results[0];
+      $this->password = $results[1];
+      $this->clean();
       return 1;
     } else {
       return $result;
@@ -58,46 +49,75 @@ class Site {
     }
   }
 
-  function createTheme($themeName) {
-    $outputPath = $this->path . theme_relative . $themeName;
-    $this->theme = new Theme($themeName, $this->inputPath, $outputPath);
-    //$this->theme->create();
+  function createTheme() {
+    $themeName = $this->domainToName($this->domain);
+    printLine("Creating theme: " . colorString($themeName, primary_color));
+    $themesDir = $this->path . themes_relative;
+    $this->theme = new Theme($themeName, $themesDir, $this);
   }
 
   function activateTheme() {
+    printLine("Activating theme: " . colorString($this->theme->name, primary_color));
     if(isset($this->path)) {
-      chdir($this->path);
-      passthru("wp theme activate " . $this->theme->name);
+      $this->wpCLI("wp theme activate " . $this->theme->name);
     }
   }
 
-  function clean() {
-    chdir($this->path);
-    passthru('wp post delete $(wp post list --post_type=page --format=ids) --force'); //Delete default pages
-    passthru('wp post delete $(wp post list --post_type=post --format=ids) --force'); //Delete default posts
-  }
-
   function buildContent() {
+    printLine("Building content...");
     foreach($this->theme->pages as $page) { //Convert each file in input directory to template
       $this->buildPage($page);
     }
   }
 
-  private function buildPage($page) {
-    chdir($this->path);
-    //Create actual page
-    $id = exec("wp post create --post_title=" . escapeshellarg($page->getName()) . " --post_type=page --post_status=publish --porcelain");
-    //Set page template
-    exec("wp post meta add $id _wp_page_template " .  escapeshellarg("page-templates/" . basename($page->template->path)));
-    //Set content meta
-    foreach($page->template->sections as $section) {
-      foreach($section->meta as $meta) {
-        if(isset($meta['key']) && isset($meta['value'])) {
-          exec("wp post meta add $id " . escapeshellarg($meta['key']) . " " . escapeshellarg($meta['value']));
-        }
-      }
-    }
-    printLine(colorString(checkmark, success_color) . " " . $page->getName());
+  function printCredentials() {
+    printLine("Username: " . colorString($this->username, secondary_color));
+    printLine("Password: " . colorString($this->password, secondary_color));
+    exec("echo $this->password | pbcopy");
+    printLine(colorString("Success: ", success_color) . "Password has been added to clipboard.");
   }
 
+  function wpCLI($command, $passthru = false) {
+    chdir($this->path);
+    if($passthru) {
+      passthru($command);
+    } else {
+      return exec($command);
+    }
+  }
+
+  /* ----------
+  * Private Functions
+  ---------- */
+
+  private function clean() {
+    printLine("Cleaning...");
+    $this->wpCLI('wp post delete $(wp post list --post_type=page --format=ids) --force', true);
+    $this->wpCLI('wp post delete $(wp post list --post_type=post --format=ids) --force', true);
+  }
+
+  private function domainToName($domain) {
+    $split = explode(".", $domain);
+    return toWords($split[count($split)-2]);
+  }
+
+  private function buildPage($page) {
+    //Create page
+    $id = $this->wpCLI("wp post create --post_title=" . escapeshellarg($page->getName()) . " --post_type=page --post_status=publish --porcelain");
+    //Set page template
+    if(isset($id)) {
+      $this->wpCLI("wp post meta add $id _wp_page_template " .  escapeshellarg("page-templates/" . basename($page->template->path)));
+      //Set content meta
+      foreach($page->template->sections as $section) {
+        foreach($section->meta as $meta) {
+          if(isset($meta['key']) && isset($meta['value'])) {
+            $this->wpCLI("wp post meta add $id " . escapeshellarg($meta['key']) . " " . escapeshellarg($meta['value']));
+          }
+        }
+      }
+      printLine(colorString(checkmark, success_color) . " " . $page->getName());
+    } else {
+      printError("Page Creation Failed");
+    }
+  }
 }

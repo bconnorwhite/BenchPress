@@ -7,13 +7,15 @@ class Page {
   var $inputPath;
   var $templateDir;
   var $sectionDir;
+  var $site;
   var $template;
 
-  function __construct($inputPath, $templateDir, $sectionDir) {
+  function __construct($inputPath, $templateDir, $sectionDir, $site) {
     $this->inputPath = $inputPath;
     $this->templateDir = $templateDir;
     $this->sectionDir = $sectionDir;
-    $this->template = new Template($this->inputPath, $this->templateDir);
+    $this->site = $site;
+    $this->template = new Template($this->inputPath, $this->templateDir, $site);
   }
 
   function getName() {
@@ -24,7 +26,7 @@ class Page {
     if(isset($this->template)) {
       $this->template->create($this->sectionDir);
     } else {
-      echo("Missing template\n");
+      printError("Missing template");
     }
   }
 

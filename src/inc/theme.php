@@ -1,9 +1,7 @@
 <?php
 
-const base_path = __DIR__ . "/../base";
-const page_dir = "/page-templates/";
-const section_dir = "/section-templates/";
-const acf_path = "/inc/acf.php";
+const page_templates = "/page-templates/";
+const section_templates = "/section-templates/";
 
 include_once('template.php');
 include_once('page.php');
@@ -11,30 +9,35 @@ include_once('page.php');
 class Theme {
 
   var $name;
-  var $outputPath;
-  var $inputPath;
+  var $path;
+  var $site;
   var $templates;
   var $pages;
 
-  function __construct($name, $inputPath, $outputPath) {
+  function __construct($name, $themesDir, $site) {
     $this->name = $name;
-    $this->inputPath = $inputPath;
-    $this->outputPath = $outputPath;
+    $this->path = $themesDir . $name;
+    $this->site = $site;
     $this->templates = [];
     $this->pages = [];
     $this->create();
   }
 
+  /* ----------
+  * Private Functions
+  ---------- */
+
   private function create() {
+    global $sourceDir;
     //Copy base theme to site themes directory
-    exec('cp -R ' . base_path . " " . escapeshellarg($this->outputPath));
-    $files = scandir($this->inputPath);
+    exec('cp -R ' . base_theme . " " . escapeshellarg($this->path));
+    $files = scandir($sourceDir);
     foreach($files as $file) { //Convert each file in input directory to template
-      $filePath = $this->inputPath . $file;
+      $inputPath = $sourceDir . $file;
       if(pathinfo($file, PATHINFO_EXTENSION) == "html") { //Check that file is valid
-        $templateDir = $this->outputPath . page_dir;
-        $sectionDir = $this->outputPath . section_dir;
-        $page = new Page($filePath, $templateDir, $sectionDir);
+        $templateDir = $this->path . page_templates;
+        $sectionDir = $this->path . section_templates;
+        $page = new Page($inputPath, $templateDir, $sectionDir, $this->site);
         if(!$this->isDuplicate($page->template)) {
           $page->createTemplate();
           array_push($this->templates, $page->template);
@@ -92,7 +95,7 @@ class Theme {
         }
       }
     }
-    file_put_contents($this->outputPath . acf_path,
+    file_put_contents($this->path . "/inc/acf.php",
       "<?php\n\n" .
       '$groups = ' . var_export($groups, true) . ";\n\n" .
       '$fields = ' . var_export($fields, true) . ";\n\n" .
