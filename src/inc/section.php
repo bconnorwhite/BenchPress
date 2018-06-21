@@ -128,6 +128,7 @@ class Section {
   }
 
   private function wpMenu($location) {
+    $this->site->addMenu($location);
     return "\n" . $this->tabs() . "<?php wp_nav_menu(array('theme_location' => '" . $location . "')); ?>";
   }
 
@@ -184,7 +185,7 @@ class Section {
   }
 
   private function imgTag($element) {
-    $content = "<img ";
+    $content = "\n" . $this->tabs() . "<img ";
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
         $imagePath = $this->site->importImage($attribute->value);

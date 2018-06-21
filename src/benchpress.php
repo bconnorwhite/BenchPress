@@ -35,7 +35,6 @@ function createSite($domain, $username, $email, $sourceDir) {
   $createResult = $site->create();
   if($createResult == 1) {
     $site->createTheme();
-    $site->activateTheme();
     $site->buildContent();
     $site->printCredentials();
     return 1;

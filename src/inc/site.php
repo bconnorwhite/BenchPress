@@ -62,13 +62,6 @@ class Site {
     $this->theme->create();
   }
 
-  function activateTheme() {
-    printLine("Activating theme: " . colorString($this->theme->name, primary_color));
-    if(isset($this->path)) {
-      $this->wpCLI("wp theme activate " . $this->theme->name);
-    }
-  }
-
   function buildContent() {
     printLine("Building content...");
     foreach($this->theme->pages as $page) { //Convert each file in input directory to template
@@ -104,6 +97,10 @@ class Site {
 
   function importImage($relativePath) {
     return $this->theme->importImage($this->sourceDir . $relativePath);
+  }
+
+  function addMenu($location) {
+    $this->theme->addMenu($location);
   }
 
   /* ----------

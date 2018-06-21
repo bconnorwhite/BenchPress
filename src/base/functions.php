@@ -1,10 +1,4 @@
 <?php
-/* Add Menus-------- */
-function register_menus(){
-	register_nav_menus(array('header-menu' => __('Header Menu'),));
-}
-add_action('init', 'register_menus');
-
 /* Remove Page Editor-------- */
 function remove_editor_init() {
   remove_post_type_support('page', 'editor');
@@ -36,6 +30,9 @@ function enqueue(){
 	wp_enqueue_style('google_fonts');
 }
 add_action( 'wp_enqueue_scripts', 'enqueue' );
+
+/* Register Menus ---------- */
+include_once(get_template_directory() . '/inc/menus.php');
 
 /* Advanced Custom Fields ---------- */
 require(get_template_directory() . '/plugins/include.php');
