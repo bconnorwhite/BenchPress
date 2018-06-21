@@ -111,6 +111,7 @@ class Site {
     printLine("Cleaning...");
     $this->wpCLI('wp post delete $(wp post list --post_type=page --format=ids) --force', true);
     $this->wpCLI('wp post delete $(wp post list --post_type=post --format=ids) --force', true);
+    //$this->wpCLI('wp rewrite structure ' . escapeshellarg('/%postname%/'), true);
   }
 
   private function domainToName($domain) {
