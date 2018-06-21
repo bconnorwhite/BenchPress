@@ -9,8 +9,6 @@ const base_theme = __DIR__ . "/base/";
 include_once(inc_path . "cli.php");
 include_once(inc_path . "site.php");
 
-$sourceDir;
-
 if($argc > 1) {
   $sourceDir = $argv[1];
   if($argc > 4) {
@@ -18,9 +16,9 @@ if($argc > 1) {
     $username = $argv[3];
     $email = $argv[4];
     saveProfile($username, $email);
-    createSite($domain, $username, $email);
+    createSite($domain, $username, $email, $sourceDir);
   } else if(is_dir($sourceDir)) {
-    createSite('test.com', 'Connor', 'connor.bcw@gmail.com');
+    createSite('test.com', 'Connor', 'connor.bcw@gmail.com', $sourceDir);
     //createTheme($input, output_path, $domain);
   } else if(pathToFiletype($sourceDir) == "html") {
     createTemplate($sourceDir, root_path . "output.php", false);
@@ -31,9 +29,9 @@ function saveProfile($username, $email) {
   file_put_contents(profile_path, $username . "\n" . $email);
 }
 
-function createSite($domain, $username, $email) {
+function createSite($domain, $username, $email, $sourceDir) {
   printLine("Creating site: " . colorString($domain, primary_color));
-  $site = new Site($domain, $username, $email);
+  $site = new Site($domain, $username, $email, $sourceDir);
   $createResult = $site->create();
   if($createResult == 1) {
     $site->createTheme();
@@ -47,7 +45,7 @@ function createSite($domain, $username, $email) {
     if(strtolower($overwrite) == 'y') {
       $deleteResult = $site->delete();
       if($deleteResult == 1) {
-        return createSite($domain, $username, $email);
+        return createSite($domain, $username, $email, $sourceDir);
       } else {
         printLine($deleteResult);
         return 0;

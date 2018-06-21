@@ -144,11 +144,15 @@ class Section {
           $url = $attribute->value;
         }
       }
-      array_push($this->meta, array("key"=>$this->getFieldName($field), "value"=>serialize(array("title"=>$element->textContent, "url"=>$url))));
+      $this->addMeta($this->getFieldName($field), serialize(array("title"=>$element->textContent, "url"=>$url)));
     } else {
-      array_push($this->meta, array("key"=>$this->getFieldName($field), "value"=>$element->textContent));
+      $this->addMeta($this->getFieldName($field), $element->textContent);
     }
     return "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['title'];");
+  }
+
+  private function addMeta($key, $value) {
+    array_push($this->meta, array("key"=>$key, "value"=>$value));
   }
 
   private function openTag($element, $field) {
@@ -180,35 +184,33 @@ class Section {
   }
 
   private function imgTag($element) {
-    global $sourceDir;
-    $content = "<img src=";
+    $content = "<img ";
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
-        /*echo($sourceDir . $attribute->value);
-        echo("\n");
-        echo file_exists($sourceDir . $attribute->value);
-        echo("\n");*/
+        $imagePath = $this->site->importImage($attribute->value);
+        $content .= "src='<?php echo get_template_directory_uri()?>/img/" . basename($imagePath) . "'";
       }
     }
+    $content .= " />";
+    return $content;
   }
 
   private function acfImgTag($element, $field) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'src') {
-        $content .= " src=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "');") . "\"";
+        $content .= " src=\"" . $this->ifACFExists($field, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->getFieldName($field) . "'), 'fullsize'));") . "\"";
         $this->addField($field, $element->tagName);
-        //TODO: import image into WordPress
-        //TODO: add meta for that image
+        //Import image into WordPress
+        $id = $this->site->importMedia($attribute->value);
+        if(isset($id)) {
+          $this->addMeta($this->getGroup() . "-" . $field, $id);
+        }
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
     }
     return $content . "/>";
-  }
-
-  private function importImage($path) {
-
   }
 
   private function getSub() {
@@ -228,7 +230,7 @@ class Section {
       $settings['return_format'] = 'array';
     } else if($tag == 'img') {
       $settings['type'] = 'image';
-      $settings['return_format'] = 'url';
+      $settings['return_format'] = 'id';
     }
     array_push($this->fields, $settings);
   }

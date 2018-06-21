@@ -11,16 +11,21 @@ class Site {
   var $domain;
   var $username;
   var $email;
+  var $sourceDir;
   var $password;
   var $path;
   var $theme;
   var $pages;
 
-  function __construct($domain, $username, $email) {
+  private $media;
+
+  function __construct($domain, $username, $email, $sourceDir) {
     $this->domain = $domain;
     $this->username = $username;
     $this->email = $email;
+    $this->sourceDir = $sourceDir;
     $this->pages = [];
+    $this->media = [];
   }
 
   function create() {
@@ -54,6 +59,7 @@ class Site {
     printLine("Creating theme: " . colorString($themeName, primary_color));
     $themesDir = $this->path . themes_relative;
     $this->theme = new Theme($themeName, $themesDir, $this);
+    $this->theme->create();
   }
 
   function activateTheme() {
@@ -84,6 +90,20 @@ class Site {
     } else {
       return exec($command);
     }
+  }
+
+  function importMedia($path) {
+    if(array_key_exists($path, $this->media)) {
+      return $this->media[$path];
+    } else {
+      $id = $this->wpCLI('wp media import ' . escapeshellarg($this->sourceDir . $path) . ' --porcelain');
+      $this->media[$path] = $id;
+      return $id;
+    }
+  }
+
+  function importImage($relativePath) {
+    return $this->theme->importImage($this->sourceDir . $relativePath);
   }
 
   /* ----------

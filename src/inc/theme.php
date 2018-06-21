@@ -2,6 +2,7 @@
 
 const page_templates = "/page-templates/";
 const section_templates = "/section-templates/";
+const img = "/img/";
 
 include_once('template.php');
 include_once('page.php');
@@ -14,26 +15,23 @@ class Theme {
   var $templates;
   var $pages;
 
+  private $img;
+
   function __construct($name, $themesDir, $site) {
     $this->name = $name;
     $this->path = $themesDir . $name;
     $this->site = $site;
     $this->templates = [];
     $this->pages = [];
-    $this->create();
+    $this->img = [];
   }
 
-  /* ----------
-  * Private Functions
-  ---------- */
-
-  private function create() {
-    global $sourceDir;
+  function create() {
     //Copy base theme to site themes directory
     exec('cp -R ' . base_theme . " " . escapeshellarg($this->path));
-    $files = scandir($sourceDir);
+    $files = scandir($this->site->sourceDir);
     foreach($files as $file) { //Convert each file in input directory to template
-      $inputPath = $sourceDir . $file;
+      $inputPath = $this->site->sourceDir . $file;
       if(pathinfo($file, PATHINFO_EXTENSION) == "html") { //Check that file is valid
         $templateDir = $this->path . page_templates;
         $sectionDir = $this->path . section_templates;
@@ -47,6 +45,21 @@ class Theme {
     }
     $this->buildACFMapping();
   }
+
+  function importImage($path) {
+    if(array_key_exists($path, $this->img)) {
+      return $this->img[$path];
+    } else if(file_exists($path)) {
+      $import = $this->path . img . basename($path);
+      copy($path, $import);
+      $img[$path] = $import;
+      return $import;
+    }
+  }
+
+  /* ----------
+  * Private Functions
+  ---------- */
 
   private function isDuplicate($template) {
     //Check that output path doesn't conflict with any exisiting template
