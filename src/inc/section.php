@@ -69,7 +69,7 @@ class Section {
             if(in_array($suffix, valid_wp)) {
               return $this->openTag($element, $suffix) . $this->wpField($suffix) . $this->closeTag($element, true);
             } else if($element->tagName == "ul") { //Menu
-              return $this->wpMenu($suffix);
+              return $this->wpMenu($suffix, $element);
             }
           } else if($prefix == 'acf') {
             $suffix = getSuffix($attribute->value);
@@ -127,8 +127,8 @@ class Section {
     }
   }
 
-  private function wpMenu($location) {
-    $this->site->addMenu($location);
+  private function wpMenu($location, $element) {
+    $this->site->addMenu($location, $element);
     return "\n" . $this->tabs() . "<?php wp_nav_menu(array('theme_location' => '" . $location . "')); ?>";
   }
 

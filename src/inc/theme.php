@@ -68,18 +68,20 @@ class Theme {
     }
   }
 
-  function addMenu($location) {
+  function addMenu($location, $element) {
     if(!array_key_exists($location, $this->menus)) {
-      $this->menus[$location] = toWords($location);
+      $menuTitle = toWords($location);
+      $this->menus[$location] = $menuTitle;
       $this->writeMenus(); //Register location
       //Create Menu
-      $id = $this->site->wpCLI('wp menu create ' . escapeshellarg($this->menus[$location]) . ' --porcelain');
-      if(isset($id)) {
+      $menuID = $this->site->wpCLI('wp menu create ' . escapeshellarg($menuTitle) . ' --porcelain');
+      if(isset($menuID)) {
         //Set menu location
-        $this->site->wpCLI('wp menu location assign ' . escapeshellarg($id) . ' ' . escapeshellarg($location));
+        $this->site->wpCLI('wp menu location assign ' . escapeshellarg($menuID) . ' ' . escapeshellarg($location));
         //Set menu content
-        //$itemID = $this->site->wpCLI('wp menu item add-custom ' . escapeshellarg($id) . ' ' . escapeshellarg(toWords($location)) . ' ' ... );
-        //use --parent-id= for nested
+        $this->parseMenuItems($element, $menuID, NULL);
+      } else {
+        printError('Could not create menu ' . $menuTitle);
       }
     }
   }
@@ -87,6 +89,48 @@ class Theme {
   /* ----------
   * Private Functions
   ---------- */
+
+  /* Menus should be structured:
+  <ul>
+    <li>
+      <a>
+        <ul>...
+  OR:
+  <ul>
+    <li>
+      Text
+      <ul>...
+  */
+  private function parseMenuItems($element, $menuID, $parentID) {
+    foreach($element->childNodes as $child) {
+      if($child->tagName == 'li') {
+        $itemID = NULL;
+        $parent = $parentID !== NULL ? " --parent-id=$parentID" : "";
+        printLine($parent);
+        foreach($child->childNodes as $grandchild) {
+          if(isset($grandchild->tagName)) {
+            if($grandchild->tagName == 'a') {
+              $linkURL = '';
+              foreach($grandchild->attributes as $attribute) {
+                if($attribute->name == 'href') {
+                  $linkURL = $attribute->value;
+                }
+              }
+              $itemID = $this->site->wpCLI('wp menu item add-custom ' . escapeshellarg($menuID) . ' ' . escapeshellarg($grandchild->textContent) . ' ' . escapeshellarg($linkURL) .  $parent . ' --porcelain');
+            } else if($grandchild->tagName == 'ul') {
+              printLine($itemID);
+              $this->parseMenuItems($grandchild, $menuID, $itemID);
+            }
+          } else if(isset($grandchild->wholeText)) {
+            $itemID = $this->site->wpCLI('wp menu item add-custom ' . escapeshellarg($menuID) . ' ' . escapeshellarg($grandchild->textContent) . ' ' . escapeshellarg('') . $parent . ' --porcelain');
+          }
+        }
+      }
+    }
+  }
+
+
+
 
   private function writeMenus() {
     $content = "<?php\n\tfunction register_menus(){\n\t\tregister_nav_menus(";

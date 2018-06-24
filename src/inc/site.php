@@ -99,8 +99,8 @@ class Site {
     return $this->theme->importImage($this->sourceDir . $relativePath);
   }
 
-  function addMenu($location) {
-    $this->theme->addMenu($location);
+  function addMenu($location, $element) {
+    $this->theme->addMenu($location, $element);
   }
 
   /* ----------
