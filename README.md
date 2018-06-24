@@ -1,6 +1,12 @@
 BenchPress
 ----------
 
+TODO:
+-Site relative links
+-CSS/JS
+
+----------
+
 1. Page Templates
 Templates can be reused across multiple pages. To create a page template named "Template Name", add an id of template-template_name to the page's body tag.
 
@@ -51,7 +57,24 @@ To repeat a set of elements in a repeater named "Repeater Name", wrap these elem
     </div>
     ...
 
-5. Theme Images
+5. Menus
+To create a menu named "Menu Name", add the class wp-menu_name to a ul element. Any li elements within this ul will then be editable, as well as any other sub ul menus nested in li elements.
+
+  Example:
+  <ul class="wp-menu_name">
+    <li>
+      <a>Text Only Menu Item</a>
+    <li>
+      <a href="https://google.com/">Menu Item</a>
+    </li>
+    <li>
+      <a href="https://google.com">Nested Menu Item</a>
+      <ul>
+        <li ...
+      </ul>
+  </ul>
+
+6. Theme Images
 Images without an acf- prefixed tag will be imported into the theme.
 
   Example:

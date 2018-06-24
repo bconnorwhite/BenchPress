@@ -95,11 +95,6 @@ class Theme {
     <li>
       <a>
         <ul>...
-  OR:
-  <ul>
-    <li>
-      Text
-      <ul>...
   */
   private function parseMenuItems($element, $menuID, $parentID) {
     foreach($element->childNodes as $child) {
