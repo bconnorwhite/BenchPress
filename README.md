@@ -1,26 +1,58 @@
 BenchPress
+----------
 
-==========
-TODO:
-==========
-1. Set post template
-2. Set post acf content (post meta add id key value json)
-3. Create menus
-4. Import images
-5. Create theme /img/ folder
+1. Page Templates
+Templates can be reused across multiple pages. To create a page template named "Template Name", add an id of template-template_name to the page's body tag.
 
------------
-Extract real theme name from domain
+  Example:
+    <body id="template-example_template"> ... </body>
 
-For multiple header/footers, move header/footer code to section-templates, use different includes in each page template
+2. Section templates
+Sections can be reused on multiple pages. To create a section template named "Section Name", add an id of section-section_name to a div surrounding that section.
 
-Add documentation for how to use here:
--HTML classes
--SCSS framework
--WP Install
+  Example:
+    <div id="section-example_section"> ... </div>
 
-OOP-ify benchpress.php, use includes to clean up
+3. Fields
+Fields allow site admins to edit the page's content. To add a field named "Field Name", add a class of acf-field_name to the element.
 
-Rename variables/consts, don't just call everything output...
+Text elements:
+These will allow the site admin to edit the text inside this field.
+  -h1, h2, h3, h4, h5, h6, p, span
 
-Keep track of password somehow
+  Example:
+    <h1 class="acf-example_title">Title Text</h1>
+
+Link element:
+This will allow the site admin to edit the href url and link title.
+ -a
+
+  Example:
+    <a class="acf-example_link" href="https://google.com/">Link Text</a>
+
+Image element:
+This will allow the site admin to edit the image from the site media library.
+  -img
+
+  Example:
+    <img class="acf-example_image" src="./img/example-image.jpg" />
+
+4. Repeater
+To repeat a set of elements in a repeater named "Repeater Name", wrap these elements in a div with class name acf-repeater_name each time they are repeated. The user will be able to add/remove these sections, as well as edit the internal fields.
+
+  Example:
+    <div class="acf-example_repeater">
+      <img class="acf-profile_image" src="./img/alice.jpg" />
+      <p class="acf-user_name">Alice</p>
+    </div>
+    <div class="acf-example_repeater">
+      <img class="acf-profile_image" src="./img/bob.jpg" />
+      <p class="acf-user_name">Bob</p>
+    </div>
+    ...
+
+5. Theme Images
+Images without an acf- prefixed tag will be imported into the theme.
+
+  Example:
+    <img src="./img/theme-image.png" />

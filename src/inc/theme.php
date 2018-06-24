@@ -106,7 +106,6 @@ class Theme {
       if($child->tagName == 'li') {
         $itemID = NULL;
         $parent = $parentID !== NULL ? " --parent-id=$parentID" : "";
-        printLine($parent);
         foreach($child->childNodes as $grandchild) {
           if(isset($grandchild->tagName)) {
             if($grandchild->tagName == 'a') {
@@ -118,7 +117,6 @@ class Theme {
               }
               $itemID = $this->site->wpCLI('wp menu item add-custom ' . escapeshellarg($menuID) . ' ' . escapeshellarg($grandchild->textContent) . ' ' . escapeshellarg($linkURL) .  $parent . ' --porcelain');
             } else if($grandchild->tagName == 'ul') {
-              printLine($itemID);
               $this->parseMenuItems($grandchild, $menuID, $itemID);
             }
           } else if(isset($grandchild->wholeText)) {
