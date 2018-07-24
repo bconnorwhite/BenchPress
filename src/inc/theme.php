@@ -34,6 +34,7 @@ class Theme {
   function create() {
     //Copy base theme to site themes directory
     exec('cp -R ' . base_theme . " " . escapeshellarg($this->path));
+    exec('cp -R ' . $this->site->sourceDir . " " . escapeshellarg($this->path));
     $this->activate();
     $files = scandir($this->site->sourceDir);
     foreach($files as $file) { //Convert each file in input directory to template
@@ -44,12 +45,16 @@ class Theme {
         $page = new Page($inputPath, $templateDir, $sectionDir, $this->site);
         if(!$this->isDuplicate($page->template)) {
           $page->createTemplate();
+          $page->createHeader($this->path);
           array_push($this->templates, $page->template);
         }
         array_push($this->pages, $page);
       }
     }
     $this->buildACFMapping();
+    if($this->path !== "/" && $this->path !== "~" && $this->path !== "~/Sites" && $this->path !== "~/Sites/" && $this->path !== '/Users/connorwhite/Sites/' && $this->path !== "/Users/connorwhite/Sites") { //Just gotta be careful
+      exec('find ' . escapeshellarg($this->path) . ' -name *.html -type f -delete');
+    }
   }
 
   function activate() {

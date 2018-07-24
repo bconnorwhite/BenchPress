@@ -125,10 +125,27 @@ class Template {
   private function openTag($element) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
-      $content .= " " . $attribute->name . "='" . $attribute->value . "'";
+
+      if($attribute->name == "src" && substr($attribute->value, 0, 4) !== "http") {
+        $content .= " src='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
+      } else if($attribute->name == 'style' && $this->getBackgroundImagePosition($attribute->value) > -1) {
+        $bgImagePos = $this->getBackgroundImagePosition($attribute->value);
+        $content .= " style='" . substr($attribute->value, 0, $bgImagePos) . "<?php echo get_template_directory_uri() ?>/" . substr($attribute->value, $bgImagePos) . "'";
+        printLine(" style='" . substr($attribute->value, 0, $bgImagePos) . "<?php echo get_template_directory_uri() ?>/" . substr($attribute->value, $bgImagePos) . "'");
+      } else {
+        $content .= " " . $attribute->name . "='" . $attribute->value . "'";
+      }
     }
     $this->tab++;
     return $content . ">";
+  }
+
+  private function getBackgroundImagePosition($style) {
+    $start = strpos($style, 'background-image: url(');
+    if($start > -1) {
+      return $start + strlen('background-image: url(');
+    }
+    return -1;
   }
 
   private function parseChildren($element) {

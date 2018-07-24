@@ -2,11 +2,9 @@ BenchPress
 ----------
 
 TODO:
--header.php from template head tags
+->Parser Class
 -wysiwyg
--Site relative links
--CSS/JS
--Refactor element parsing in template/section into a parser class
+~Site relative links
 
 Essence Base Theme TODO:
 -Essence developer login
