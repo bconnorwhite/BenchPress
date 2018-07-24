@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html id="html">
+<html>
     <head>
         <?php if(is_front_page()){ ?>
         	<title><?php bloginfo('name'); ?> | <?php bloginfo('description'); ?></title>

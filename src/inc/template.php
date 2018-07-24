@@ -35,33 +35,40 @@ class Template {
     return toWords(basename($this->path, ".php"));
   }
 
-  function getFileName() {
-    return basename($this->path);
-  }
-
-  function setName($name) {
-    $this->name = $name;
-  }
-
   /* ----------
   * Private Functions
   ---------- */
 
   private function getPath($inputPath, $outputDir) {
     $dom = $this->getDOM($inputPath);
-    $id = $this->getTemplateID($dom);
-    return $outputDir . getSuffix($id) . ".php";
+    $name = $this->getTemplateName($dom);
+    return $outputDir . $name . ".php";
+  }
+
+  private function getTemplateName($dom) {
+    $body = $this->getTemplateBody($dom);
+    foreach($body->attributes as $attribute) {
+      if($attribute->name == 'id') {
+        $prefix = getPrefix($attribute->value);
+        if($prefix == 'template') {
+          return $attribute->value;
+        }
+      }
+    }
+    return basename($this->inputPath, ".html");
   }
 
   private function getTemplate($inputPath) {
     $dom = $this->getDOM($inputPath);
-    $id = $this->getTemplateID($dom);
-    return $this->parse($dom->getElementById($id)) . "\n";
+    $body = $this->getTemplateBody($dom);
+    return $this->parse($body) . "\n";
   }
 
   private function getDOM($inputPath) {
     $dom = new DOMDocument;
+    libxml_use_internal_errors(true);
     $dom->loadHTMLFile($inputPath);
+    libxml_use_internal_errors(false);
     $this->cleanDOM($dom);
     return $dom;
   }
@@ -76,18 +83,11 @@ class Template {
     }
   }
 
-  private function getTemplateID($dom) {
+  private function getTemplateBody($dom) {
     $body = $dom->getElementsByTagName('body');
     if($body && $body->length > 0) {
       $body = $body->item(0);
-      foreach($body->attributes as $attribute) {
-        if($attribute->name == 'id') {
-          $prefix = getPrefix($attribute->value);
-          if($prefix == 'template') {
-            return $attribute->value;
-          }
-        }
-      }
+      return $body;
     }
   }
 
@@ -104,7 +104,7 @@ class Template {
       return $this->openTag($element) . $this->parseChildren($element) . $this->closeTag($element);
     } else if(isset($element->wholeText)) { //Text
       return $element->wholeText;
-    } else {
+    } else { //Comment
       return "";
     }
   }

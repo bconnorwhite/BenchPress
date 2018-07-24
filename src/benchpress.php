@@ -17,12 +17,17 @@ if($argc > 1) {
     $email = $argv[4];
     saveProfile($username, $email);
     createSite($domain, $username, $email, $sourceDir);
-  } else if(is_dir($sourceDir)) {
+  } else if($argc > 2) {
+    createSite($argv[2], 'Connor', 'connor.bcw@gmail.com', $sourceDir);
+  } else {
+    printLine('Format: ' . colorString('php benchpress $source $domain', prompt_color));
+  }
+  /*else if(is_dir($sourceDir)) {
     createSite('test.com', 'Connor', 'connor.bcw@gmail.com', $sourceDir);
     //createTheme($input, output_path, $domain);
   } else if(pathToFiletype($sourceDir) == "html") {
     createTemplate($sourceDir, root_path . "output.php", false);
-  }
+  }*/
 }
 
 function saveProfile($username, $email) {

@@ -2,19 +2,37 @@ BenchPress
 ----------
 
 TODO:
+-header.php from template head tags
+-wysiwyg
 -Site relative links
 -CSS/JS
+-Refactor element parsing in template/section into a parser class
+
+Essence Base Theme TODO:
+-Essence developer login
+-Ability to upload html template -> dev.<domain>.wp-essence.com or dev.<domain>.<tld>
+-Ability to publish dev -> live for first time (init)
+-Ability to pull content + db from live -> dev (sync)
+-Ability to commit theme changes on dev (commit)
+-Ability to pull theme changes from dev to live (pull)
+=Figure out best way to use drafts for content changes
+-Dev site admin login only so client can't make content changes
+-Way to easily edit theme in atom/etc. without local install
 
 ----------
 
 1. Page Templates
-Templates can be reused across multiple pages. To create a page template named "Template Name", add an id of template-template_name to the page's body tag.
+Templates can be reused across multiple pages. To create a page template named "Template Name", add an id of template-template_name to the page's body tag. Every page must have a template selected.
+If the body doesn't have an id, the page name will be used.
 
-  Example:
+  Example 1:
     <body id="template-example_template"> ... </body>
 
+  Example 2:
+    example_template.html
+
 2. Section templates
-Sections can be reused on multiple pages. To create a section template named "Section Name", add an id of section-section_name to a div surrounding that section.
+Sections can be reused on multiple pages. To create a section template named "Section Name", add an id of section-section_name to a div surrounding that section. All fields, images, menus, etc. must be in a section.
 
   Example:
     <div id="section-example_section"> ... </div>
