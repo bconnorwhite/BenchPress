@@ -131,7 +131,6 @@ class Template {
       } else if($attribute->name == 'style' && $this->getBackgroundImagePosition($attribute->value) > -1) {
         $bgImagePos = $this->getBackgroundImagePosition($attribute->value);
         $content .= " style='" . substr($attribute->value, 0, $bgImagePos) . "<?php echo get_template_directory_uri() ?>/" . substr($attribute->value, $bgImagePos) . "'";
-        printLine(" style='" . substr($attribute->value, 0, $bgImagePos) . "<?php echo get_template_directory_uri() ?>/" . substr($attribute->value, $bgImagePos) . "'");
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
