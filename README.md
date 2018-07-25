@@ -3,6 +3,7 @@ BenchPress
 
 TODO:
 ->Parser Class
+->Ask EB about how BenchPress + Essence could help (i.e. she creates a design, that other person makes the html + css, etc.)
 -wysiwyg
 ~Site relative links
 
