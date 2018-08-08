@@ -34,7 +34,9 @@ class Theme {
   function create() {
     //Copy base theme to site themes directory
     exec('cp -R ' . base_theme . " " . escapeshellarg($this->path));
-    exec('cp -R ' . $this->site->sourceDir . " " . escapeshellarg($this->path));
+    chdir($this->site->sourceDir);
+    //Copy everything from source dir except .html files
+    exec('find . -not -name "*.html" -type f | cpio -pdm ' . escapeshellarg($this->path));
     $this->activate();
     $files = scandir($this->site->sourceDir);
     foreach($files as $file) { //Convert each file in input directory to template
@@ -52,9 +54,6 @@ class Theme {
       }
     }
     $this->buildACFMapping();
-    if($this->path !== "/" && $this->path !== "~" && $this->path !== "~/Sites" && $this->path !== "~/Sites/" && $this->path !== '/Users/connorwhite/Sites/' && $this->path !== "/Users/connorwhite/Sites") { //Just gotta be careful
-      exec('find ' . escapeshellarg($this->path) . ' -name *.html -type f -delete');
-    }
   }
 
   function activate() {
@@ -151,37 +150,35 @@ class Theme {
     $groups = [];
     $fields = [];
     foreach($this->templates as $template) {
-      foreach($template->sections as $section) {
-        $created = false;
-        foreach($groups as $group) {
-          $newKey = $section->getGroup();
-          if($group['key'] == $newKey) {
-            $created = true;
-            array_push($group['location'][0], array(
-              'param' => 'page_template',
-              'operator' => '==',
-              'value' => "page-templates/" . $template->getFileName()
-            ));
-          }
-        }
-        if(!$created) {
-          array_push($groups, array(
-            'key' => $section->getGroup(),
-            'title' => $section->getName(),
-            'location'=> array(
-              array(
-                array(
-                  'param' => 'page_template',
-                  'operator' => '==',
-                  'value'=> "page-templates/" . $template->getFileName()
-                )
-              )
-            )
+      $created = false;
+      foreach($groups as $group) {
+        $newKey = $template->getGroup();
+        if($group['key'] == $newKey) {
+          $created = true;
+          array_push($group['location'][0], array(
+            'param' => 'page_template',
+            'operator' => '==',
+            'value' => "page-templates/" . strtolower($template->getFileName()) . '.php'
           ));
         }
-        foreach($section->fields as $field) {
-          array_push($fields, $field);
-        }
+      }
+      if(!$created) {
+        array_push($groups, array(
+          'key' => $template->getGroup(),
+          'title' => $template->getName(),
+          'location'=> array(
+            array(
+              array(
+                'param' => 'page_template',
+                'operator' => '==',
+                'value'=> "page-templates/" . strtolower($template->getFileName()) . '.php'
+              )
+            )
+          )
+        ));
+      }
+      foreach($template->fields as $field) {
+        array_push($fields, $field);
       }
     }
     file_put_contents($this->path . acf,

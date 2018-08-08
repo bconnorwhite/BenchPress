@@ -22,12 +22,6 @@ if($argc > 1) {
   } else {
     printLine('Format: ' . colorString('php benchpress $source $domain', prompt_color));
   }
-  /*else if(is_dir($sourceDir)) {
-    createSite('test.com', 'Connor', 'connor.bcw@gmail.com', $sourceDir);
-    //createTheme($input, output_path, $domain);
-  } else if(pathToFiletype($sourceDir) == "html") {
-    createTemplate($sourceDir, root_path . "output.php", false);
-  }*/
 }
 
 function saveProfile($username, $email) {

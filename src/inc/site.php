@@ -31,6 +31,7 @@ class Site {
   function create() {
     $out;
     $retval = 0;
+    //Bash script to initalize a WordPress site, database.
     $result = exec(create_script_path . " " . escapeshellarg($this->domain) . " " . escapeshellarg($this->username) . " " . escapeshellarg($this->email), $out, $retval);
     if($retval == 1) {
       $results = explode(" ", $result);
@@ -126,6 +127,10 @@ class Site {
     //Set page template
     if(isset($id)) {
       $this->wpCLI("wp post meta add $id _wp_page_template " .  escapeshellarg("page-templates/" . basename($page->template->path)));
+      if($page->getName() == "Index") {
+        $this->wpCLI("wp option update show_on_front page");
+        $this->wpCLI("wp option update page_on_front " . $id);
+      }
       //Set content meta
       foreach($page->template->sections as $section) {
         foreach($section->meta as $meta) {

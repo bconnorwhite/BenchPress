@@ -1,115 +1,47 @@
 <?php
 
-const valid_wp = ['title'];
-
 include_once('section.php');
+include_once('parser.php');
 
 class Template {
 
   var $inputPath;
   var $path;
   var $site;
+  var $fields;
+  var $meta;
   var $sectionDir;
-  var $tab;
   var $sections;
 
   function __construct($inputPath, $outputDir, $site) {
     $this->inputPath = $inputPath;
     $this->path = $this->getPath($inputPath, $outputDir);
     $this->site = $site;
-    $this->tab = 0;
+    $this->fields = [];
+    $this->meta = [];
     $this->sections = [];
   }
 
   function create($sectionDir) {
     $this->sectionDir = $sectionDir;
     if(isset($this->path) && isset($this->inputPath)) {
+      $parser = new Parser(0, $this);
       $start = "<?php\n/**\n * Template Name: " . $this->getName() . " Page Template\n */\nget_header(); ?>";
-      $content = $this->getTemplate($this->inputPath);
+      $content = $parser->parse($parser->getElementByTagName($this->inputPath, 'body'));
       $end = "<?php get_footer(); ?>\n";
       file_put_contents($this->path, $start . $content . $end);
     }
+  }
+
+  function getFileName() {
+    return $this->getName();
   }
 
   function getName() {
     return toWords(basename($this->path, ".php"));
   }
 
-  /* ----------
-  * Private Functions
-  ---------- */
-
-  private function getPath($inputPath, $outputDir) {
-    $dom = $this->getDOM($inputPath);
-    $name = $this->getTemplateName($dom);
-    return $outputDir . $name . ".php";
-  }
-
-  private function getTemplateName($dom) {
-    $body = $this->getTemplateBody($dom);
-    foreach($body->attributes as $attribute) {
-      if($attribute->name == 'id') {
-        $prefix = getPrefix($attribute->value);
-        if($prefix == 'template') {
-          return $attribute->value;
-        }
-      }
-    }
-    return basename($this->inputPath, ".html");
-  }
-
-  private function getTemplate($inputPath) {
-    $dom = $this->getDOM($inputPath);
-    $body = $this->getTemplateBody($dom);
-    return $this->parse($body) . "\n";
-  }
-
-  private function getDOM($inputPath) {
-    $dom = new DOMDocument;
-    libxml_use_internal_errors(true);
-    $dom->loadHTMLFile($inputPath);
-    libxml_use_internal_errors(false);
-    $this->cleanDOM($dom);
-    return $dom;
-  }
-
-  //Clean of empty text nodes
-  private function cleanDOM($dom) {
-    $xpath = new DOMXPath($dom);
-    foreach($xpath->query('//text()') as $node) {
-      if(ctype_space($node->wholeText)) {
-        $node->parentNode->removeChild($node);
-      }
-    }
-  }
-
-  private function getTemplateBody($dom) {
-    $body = $dom->getElementsByTagName('body');
-    if($body && $body->length > 0) {
-      $body = $body->item(0);
-      return $body;
-    }
-  }
-
-  private function parse($element) {
-    if(isset($element->tagName)) {
-      foreach($element->attributes as $attribute) {
-        $prefix = getPrefix($attribute->value);
-        if($attribute->name == 'id' && $prefix == 'section') {
-          $suffix = getSuffix($attribute->value);
-          $this->createSection($element);
-          return "\n" . $this->tabs() . '<?php include(get_template_directory() . "/section-templates/' . $suffix . '.php"); ?>';
-        }
-      }
-      return $this->openTag($element) . $this->parseChildren($element) . $this->closeTag($element);
-    } else if(isset($element->wholeText)) { //Text
-      return $element->wholeText;
-    } else { //Comment
-      return "";
-    }
-  }
-
-  private function createSection($element) {
+  function createSection($element) {
     $section = new Section($element, $this->site);
     if($section->setPath($this->sectionDir)) {
       foreach($this->sections as $s) {
@@ -122,54 +54,56 @@ class Template {
     }
   }
 
-  private function openTag($element) {
-    $content = "\n" . $this->tabs() . "<" . $element->tagName;
-    foreach($element->attributes as $attribute) {
+  function getGroup() {
+    return "group-" . basename($this->path, ".php");
+  }
 
-      if($attribute->name == "src" && substr($attribute->value, 0, 4) !== "http") {
-        $content .= " src='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
-      } else if($attribute->name == 'style' && $this->getBackgroundImagePosition($attribute->value) > -1) {
-        $bgImagePos = $this->getBackgroundImagePosition($attribute->value);
-        $content .= " style='" . substr($attribute->value, 0, $bgImagePos) . "<?php echo get_template_directory_uri() ?>/" . substr($attribute->value, $bgImagePos) . "'";
-      } else {
-        $content .= " " . $attribute->name . "='" . $attribute->value . "'";
+  function getFieldName($field) {
+    return $this->getGroup() . "-" . $field;
+  }
+
+  function addField($field, $tag) {
+    if(isset($field) && isset($tag)) {
+      $settings = array(
+        'key' => $this->getGroup() . "-field-" . $field,
+        'label' => toWords($field),
+        'name' => $this->getFieldName($field),
+        'parent' => $this->getGroup(),
+      );
+      if($tag == 'a') {
+        $settings['type'] = 'link';
+        $settings['return_format'] = 'array';
+      } else if($tag == 'img') {
+        $settings['type'] = 'image';
+        $settings['return_format'] = 'id';
+      } else if($tag == 'text') {
+        $settings['type'] = 'text';
+      } else if($tag == 'textarea') {
+        $settings['type'] = 'textarea';
+        $settings['new_lines'] = 'br';
+      } else if($tag == 'p') {
+        $settings['type'] = 'wysiwyg';
+        $settings['media_upload'] = 0;
       }
-    }
-    $this->tab++;
-    return $content . ">";
-  }
-
-  private function getBackgroundImagePosition($style) {
-    $start = strpos($style, 'background-image: url(');
-    if($start > -1) {
-      return $start + strlen('background-image: url(');
-    }
-    return -1;
-  }
-
-  private function parseChildren($element) {
-    $content = "";
-    foreach($element->childNodes as $child) {
-      $content .= $this->parse($child);
-    }
-    return $content;
-  }
-
-  private function closeTag($element) {
-    $this->tab--;
-    if($element->tagName == 'body') { //Don't close body tag, this will happen in footer.php
-      return "";
-    } else {
-      return "\n" . $this->tabs() . "</" . $element->tagName . ">";
+      array_push($this->fields, $settings);
     }
   }
 
-  private function tabs() {
-    $ret = "";
-    for($t=0; $t<$this->tab; $t++) {
-      $ret .= "\t";
-    }
-    return $ret;
+  function addMeta($key, $value) {
+    array_push($this->meta, array("key"=>$key, "value"=>$value));
+  }
+
+  /* ----------
+  * Private Functions
+  ---------- */
+
+  private function getPath($inputPath, $outputDir) {
+    $name = $this->getTemplateName();
+    return $outputDir . $name . ".php";
+  }
+
+  private function getTemplateName() {
+    return basename($this->inputPath, ".html");
   }
 
 }

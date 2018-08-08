@@ -20,13 +20,9 @@ class Section {
 
   function setPath($outputDir) {
     foreach($this->element->attributes as $attribute) {
-      if($attribute->name == "id") {
-        $prefix = getPrefix($attribute->value);
-        if($prefix == "section") {
-          $suffix = getSuffix($attribute->value);
-          $this->path = $outputDir . $suffix . ".php";
-          return true;
-        }
+      if($attribute->name == "section") {
+        $this->path = $outputDir . $attribute->value . ".php";
+        return true;
       }
     }
     return false;
@@ -61,32 +57,23 @@ class Section {
   private function parse($element) {
     if(isset($element->tagName)) { //Tag
       foreach($element->attributes as $attribute) {
-        $prefix = getPrefix($attribute->value);
-        $suffix = NULL;
-        if($attribute->name == 'class') {
-          if($prefix == 'wp') {
-            $suffix = getSuffix($attribute->value);
-            if(in_array($suffix, valid_wp)) {
-              return $this->openTag($element, $suffix) . $this->wpField($suffix) . $this->closeTag($element, true);
-            } else if($element->tagName == "ul") { //Menu
-              return $this->wpMenu($suffix, $element);
-            }
-          } else if($prefix == 'acf') {
-            $suffix = getSuffix($attribute->value);
-            if($element->tagName == 'img') {
-              return $this->acfImgTag($element, $suffix);
-            } if($element->tagName !== 'div') { //Normal acf field
-              return $this->openTag($element, $suffix) . $this->acfField($suffix, $element) . $this->closeTag($element, true);
-            } else if($this->isFirstRepeater($element, $suffix)) { //First acf repeater div
-              return $this->acfRepeater($suffix) . $this->openTag($element, $suffix) . $this->parseChildren($element) . $this->closeTag($element, false) . $this->acfRepeaterClose();
-            } else { //Not first acf repeater divs
-              return "";
-            }
+        if($attribute->name == 'field') {
+          if($element->tagName == 'img') {
+            return $this->acfImgTag($element, $attribute->value);
+          } else if($element->tagName !== 'div' && $element->tagName !== 'section') { //Normal acf field
+            return $this->openTag($element, $attribute->value) . $this->acfField($attribute->value, $element) . $this->closeTag($element, true);
+          } else { //Not first acf repeater divs
+            return $this->openTag($element, $attribute->value) . $this->parseChildren($element) . $this->closetag($element, true);
           }
+          /*else if($this->isFirstRepeater($element, $attribute->value)) { //First acf repeater div
+            return $this->acfRepeater($attribute->value) . $this->openTag($element, $attribute->value) . $this->parseChildren($element) . $this->closeTag($element, false) . $this->acfRepeaterClose();
+          }*/
         }
       }
       if($element->tagName == 'img') {
         return $this->imgTag($element);
+      } else if($element->tagName == 'br') {
+        return "<br />";
       } else {
         return $this->openTag($element, NULL) . $this->parseChildren($element) . $this->closeTag($element, false);
       }
@@ -146,6 +133,7 @@ class Section {
         }
       }
       $this->addMeta($this->getFieldName($field), serialize(array("title"=>$element->textContent, "url"=>$url)));
+      return "\n" . $this->tabs() . $this->ifACFExists($field, "echo get_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['title'];");
     } else {
       $this->addMeta($this->getFieldName($field), $element->textContent);
     }
@@ -160,14 +148,29 @@ class Section {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     foreach($element->attributes as $attribute) {
       if($field && $attribute->name == 'href') {
-        $content .= " href=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['url'];") . "\"";
-        $content .= " target=\"" . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['target'];") . "\"";
-      } else {
+        $content .= " href=\"" . $this->ifACFExists($field, "echo get_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['url'];") . "\"";
+        $content .= " target=\"" . $this->ifACFExists($field, "echo get_" . $this->getSub() . "field('" . $this->getFieldName($field) . "')['target'];") . "\"";
+      } else if($attribute->name == 'style' && $this->getBackgroundImagePosition($attribute->value) > -1) {
+        $content .= " style='background-image: url(" . $this->ifACFExists($field, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->getFieldName($field) . "'), 'fullsize'));") . ")'";
+        $this->addField($field, 'img');
+      } else if($attribute->name !== "section" && $attribute->name !== 'field') {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
     }
     $this->tab++;
     return $content . ">";
+  }
+
+  private function getBackgroundImagePosition($style) {
+    $start = strpos($style, 'background-image: url(');
+    if($start > -1) {
+      return $start + strlen('background-image: url(');
+    }
+    $start = strpos($style, 'background: url(');
+    if($start > -1) {
+      return $start + strlen('background: url(');
+    }
+    return -1;
   }
 
   private function ifACFExists($field, $content) {
@@ -190,6 +193,8 @@ class Section {
       if($attribute->name == 'src') {
         $imagePath = $this->site->importImage($attribute->value);
         $content .= "src='<?php echo get_template_directory_uri()?>/img/" . basename($imagePath) . "'";
+      } else {
+        $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
     }
     $content .= " />";
@@ -223,7 +228,7 @@ class Section {
       'key' => $this->getGroup() . "-field-" . $field,
       'label' => toWords($field),
       'name' => $this->getFieldName($field),
-      'type' => 'text',
+      'type' => 'textarea',
       'parent' => $this->getGroup(),
     );
     if($tag == 'a') {
@@ -232,6 +237,8 @@ class Section {
     } else if($tag == 'img') {
       $settings['type'] = 'image';
       $settings['return_format'] = 'id';
+    } else {
+      $settings['new_lines'] = 'br';
     }
     array_push($this->fields, $settings);
   }
