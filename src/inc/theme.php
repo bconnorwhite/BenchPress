@@ -61,12 +61,16 @@ class Theme {
   }
 
   function path() {
-    return $this->themesDir . $this->name;
+    return $this->themesDir . $this->templateName();
+  }
+
+  function templateName() {
+    return strtolower(str_replace(" ", "", $this->name));
   }
 
   function activate() {
     printLine("Activating theme: " . colorString($this->name, primary_color));
-    $this->site->wpCLI("wp theme activate " . escapeshellarg($this->name));
+    $this->site->wpCLI("wp theme activate " . escapeshellarg($this->templateName()));
     $this->site->wpCLI('wp theme delete twentyseventeen'); //Don't need this anymore
   }
 
@@ -187,7 +191,7 @@ class Theme {
         array_push($fields, $field);
       }
     }
-    file_put_contents($this->path() . acf,
+    file_put_contents($this->themesDir . essence_template . acf,
       "<?php\n\n" .
       '$groups = ' . var_export($groups, true) . ";\n\n" .
       '$fields = ' . var_export($fields, true) . ";\n\n" .
