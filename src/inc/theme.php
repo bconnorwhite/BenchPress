@@ -13,7 +13,7 @@ include_once('page.php');
 class Theme {
 
   var $name;
-  var $path;
+  var $themesDir;
   var $site;
   var $templates;
   var $pages;
@@ -23,7 +23,7 @@ class Theme {
 
   function __construct($name, $themesDir, $site) {
     $this->name = $name;
-    $this->path = $themesDir . $name;
+    $this->themesDir = $themesDir;
     $this->site = $site;
     $this->templates = [];
     $this->pages = [];
@@ -32,22 +32,26 @@ class Theme {
   }
 
   function create() {
-    //Copy base theme to site themes directory
-    exec('mkdir ' . escapeshellarg($this->path));
+    //Copy parent theme to themes directory
+    exec('cp -R ' . essence_theme . " " . escapeshellarg($this->themesDir . essence_template));
+    //Copy child theme to themes directory
+    exec('cp -R ' . child_theme . " " . escapeshellarg($this->path()));
+    //Set as child of Essence Theme
+    file_put_contents($this->path() . "/style.css", "/*\nTheme Name:\tEssence ". $this->name . "\nTemplate:\t" . essence_template . "\n*/");
+    //Copy everything from source dir except .html files to child theme
     chdir($this->site->sourceDir);
-    //Copy everything from source dir except .html files
-    exec('find . -not -name "*.html" -type f | cpio -pdm ' . escapeshellarg($this->path));
+    exec('find . -not -name "*.html" -type f | cpio -pdm ' . escapeshellarg($this->path()));
     $this->activate();
     $files = scandir($this->site->sourceDir);
     foreach($files as $file) { //Convert each file in input directory to template
       $inputPath = $this->site->sourceDir . $file;
       if(pathinfo($file, PATHINFO_EXTENSION) == "html") { //Check that file is valid
-        $templateDir = $this->path . page_templates;
-        $sectionDir = $this->path . section_templates;
+        $templateDir = $this->path() . page_templates;
+        $sectionDir = $this->path() . section_templates;
         $page = new Page($inputPath, $templateDir, $sectionDir, $this->site);
         if(!$this->isDuplicate($page->template)) {
           $page->createTemplate();
-          $page->createHeader($this->path);
+          $page->createHeader($this->path());
           array_push($this->templates, $page->template);
         }
         array_push($this->pages, $page);
@@ -56,16 +60,21 @@ class Theme {
     $this->buildACFMapping();
   }
 
+  function path() {
+    return $this->themesDir . $this->name;
+  }
+
   function activate() {
     printLine("Activating theme: " . colorString($this->name, primary_color));
     $this->site->wpCLI("wp theme activate " . escapeshellarg($this->name));
+    $this->site->wpCLI('wp theme delete twentyseventeen'); //Don't need this anymore
   }
 
   function importImage($path) {
     if(array_key_exists($path, $this->img)) {
       return $this->img[$path];
     } else if(file_exists($path)) {
-      $import = $this->path . img . basename($path);
+      $import = $this->path() . img . basename($path);
       copy($path, $import);
       $img[$path] = $import;
       return $import;
@@ -126,14 +135,11 @@ class Theme {
     }
   }
 
-
-
-
   private function writeMenus() {
     $content = "<?php\n\tfunction register_menus(){\n\t\tregister_nav_menus(";
     $content .= var_export($this->menus, true);
     $content .= ");\n\t}\n\tadd_action('init', 'register_menus');";
-    file_put_contents($this->path . menus, $content);
+    file_put_contents($this->path() . menus, $content);
   }
 
   private function isDuplicate($template) {
@@ -181,7 +187,7 @@ class Theme {
         array_push($fields, $field);
       }
     }
-    file_put_contents($this->path . acf,
+    file_put_contents($this->path() . acf,
       "<?php\n\n" .
       '$groups = ' . var_export($groups, true) . ";\n\n" .
       '$fields = ' . var_export($fields, true) . ";\n\n" .

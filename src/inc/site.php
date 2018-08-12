@@ -56,12 +56,9 @@ class Site {
   }
 
   function createTheme() {
-    $themesDir = $this->path . themes_relative;
-    //Copy base theme
-    exec('cp -R ' . base_theme . " " . escapeshellarg($themesDir));
-    //Create child theme
     $themeName = $this->domainToName($this->domain);
     printLine("Creating theme: " . colorString($themeName, primary_color));
+    $themesDir = $this->path . themes_relative;
     $this->theme = new Theme($themeName, $themesDir, $this);
     $this->theme->create();
   }
@@ -113,8 +110,6 @@ class Site {
 
   private function clean() {
     printLine("Cleaning...");
-    $this->wpCLI('wp post delete $(wp post list --post_type=page --format=ids) --force', true);
-    $this->wpCLI('wp post delete $(wp post list --post_type=post --format=ids) --force', true);
     //TODO: this doesnt work b/c local nginx setup doesnt link things correctly. Probably fine on remote server
     //$this->wpCLI('wp rewrite structure ' . escapeshellarg('/%postname%/'), true);
   }

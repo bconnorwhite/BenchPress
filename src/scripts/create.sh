@@ -21,12 +21,16 @@ if [[ $# -gt 0 ]]; then
       wp config create --dbname=wp_$DOMAIN --dbuser=$DOMAIN --dbpass=$MYSQL_PASS --dbhost=127.0.0.1 --skip-check
       WP_PASS="$(openssl rand -base64 12)"
       wp core install --url=http://$URL --title= --admin_user=$2 --admin_password=$WP_PASS --admin_email=$3
-      #Clean up
+      array=($(pwd) $WP_PASS)
+      #Clean up plugins
       rm -rf wp-content/plugins/akismet
       rm wp-content/plugins/hello.php
+      #Clean up themes (have to leave twentyseventeen so one is active)
       wp theme delete twentyfifteen
       wp theme delete twentysixteen
-      array=($(pwd) $WP_PASS)
+      #Clean up posts
+      wp post delete $(wp post list --post_type=page --format=ids) --force
+      wp post delete $(wp post list --post_type=post --format=ids) --force
       echo "${array[@]}"
       exit 1
     else

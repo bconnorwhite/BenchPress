@@ -57,7 +57,7 @@ add_action( 'wp_dashboard_setup', 'essence_remove_dashboard_widgets' );
 
 
 //Block dashboard
-if(!current_user_can('admin')) {
+if(!current_user_can('administrator')) {
   define( 'DISALLOW_FILE_EDIT', true ); //Just in case...
   add_action('admin_init', 'essence_dashboard_redirect');
 }

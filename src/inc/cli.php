@@ -22,7 +22,7 @@ function printLine($string) {
 }
 
 function toWords($string) {
-  return ucwords(str_replace("_", " ", $string));
+  return ucwords(str_replace("-", " ", str_replace("_", " ", $string)));
 }
 
 function getPrefix($string) {
