@@ -2,12 +2,12 @@
 # $1: domain
 if [[ $# -eq 1 ]]; then
   DOMAIN="$(echo $1 | sed -e 's/\.[a-z]*$//')" #Domain with TLD removed (i.e. dev.test)
-  SMUSH="${1//./_}" #Domain with dots replaced by _ (i.e. dev_test_com)
-  if [[ -n "${DOMAIN}" && -n "${SMUSH}" ]]; then
+  #SMUSH="${1//./_}" #Domain with dots replaced by _ (i.e. dev_test_com)
+  if [[ -n "${DOMAIN}" ]]; then
     PARENT="/Users/connorwhite/Sites/${1}"
     ROOT_MYSQL_PASS=""
-    mysql -uroot $ROOT_MYSQL_PASS -e "DROP USER '${SMUSH}'@'127.0.0.1';
-      DROP DATABASE wp_${SMUSH};"
+    mysql -uroot $ROOT_MYSQL_PASS -e "DROP USER \`${DOMAIN}\`@'127.0.0.1';
+      DROP DATABASE \`wp_${DOMAIN}\`;"
     if [[ -n "${PARENT}" && -d $PARENT ]]; then
       rm -rf $PARENT
     fi
