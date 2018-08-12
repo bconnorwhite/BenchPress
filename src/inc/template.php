@@ -34,7 +34,7 @@ class Template {
   }
 
   function getFileName() {
-    return $this->getName();
+    return str_replace(" ", "_", $this->getName());
   }
 
   function getName() {
@@ -55,19 +55,20 @@ class Template {
   }
 
   function getGroup() {
-    return "group-" . basename($this->path, ".php");
+    return "group-" . str_replace(" ", "_", basename($this->path, ".php"));
   }
 
   function getFieldName($field) {
     return $this->getGroup() . "-" . $field;
   }
 
-  function addField($field, $tag) {
-    if(isset($field) && isset($tag)) {
+  function addField($tag) {
+    if(isset($tag)) {
+      $fieldId = count($this->fields) + 1;
       $settings = array(
-        'key' => $this->getGroup() . "-field-" . $field,
-        'label' => toWords($field),
-        'name' => $this->getFieldName($field),
+        'key' => $this->getGroup() . "-field-" . $fieldId,
+        'label' => $fieldId,
+        'name' => $this->getFieldName($fieldId),
         'parent' => $this->getGroup(),
       );
       if($tag == 'a') {
@@ -86,7 +87,9 @@ class Template {
         $settings['media_upload'] = 0;
       }
       array_push($this->fields, $settings);
+      return $fieldId;
     }
+    return NULL;
   }
 
   function addMeta($key, $value) {

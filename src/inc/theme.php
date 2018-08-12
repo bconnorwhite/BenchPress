@@ -65,7 +65,7 @@ class Theme {
   }
 
   function templateName() {
-    return 'wp-essence-' . strtolower(str_replace(" ", "", $this->name));
+    return 'wp-essence-' . strtolower(str_replace(" ", "-", $this->name));
   }
 
   function activate() {
@@ -191,7 +191,7 @@ class Theme {
         array_push($fields, $field);
       }
     }
-    file_put_contents($this->themesDir . essence_template . acf,
+    file_put_contents($this->path() . acf,
       "<?php\n\n" .
       '$groups = ' . var_export($groups, true) . ";\n\n" .
       '$fields = ' . var_export($fields, true) . ";\n\n" .

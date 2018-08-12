@@ -7,7 +7,7 @@ function my_acf_settings_path($path) {
 add_filter('acf/settings/path', 'my_acf_settings_path');
 
 // 2. Customize ACF dir
-function my_acf_settings_dir( $dir ) {
+function my_acf_settings_dir($dir) {
     return get_template_directory_uri() . '/plugins/advanced-custom-fields-pro/';
 }
 add_filter('acf/settings/dir', 'my_acf_settings_dir');

@@ -2,7 +2,6 @@
 
 const single_tags = ['meta', 'link', 'img', 'br'];
 const text_tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span'];
-const keyword_attributes = ['field', 'section'];
 
 class Parser {
 
@@ -40,9 +39,10 @@ class Parser {
             }
           }
         }
-        $content .= $this->openTag($element);
+        $openTag = $this->openTag($element); //array(content, fieldId);
+        $content .= $openTag['content'];
         if(!$this->isSingleTag($element)) {
-          $content .= $this->parseInner($element);
+          $content .= $this->parseInner($element, $openTag['fieldId']);
           $content .= $this->closeTag($element);
         }
       } else if(isset($element->wholeText)) {
@@ -56,23 +56,53 @@ class Parser {
   * Private Functions
   ---------- */
 
-  private function parseInner($element) {
-    if(isset($this->template) && $this->getField($element) !== NULL) {
-      $field = $this->getField($element);
+  private function openTag($element) {
+    $content = "\n" . $this->tabs() . "<" . $element->tagName;
+    $fieldId = $this->getFieldId($element);
+    foreach($element->attributes as $attribute) {
+      if($attribute->name == 'src') {
+        if(isset($fieldId) && $element->tagName == "img") {
+          $content .= " src='" . $this->ifACFExists($fieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'), 'fullsize'));") . "'";
+        } else {
+          $content .= " src='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
+        }
+      } else if($attribute->name == 'href' && $element->tagName == "link" && $this->urlIsRelative($attribute->value)) {
+        $content .= " " . $attribute->name . "='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
+      } else if($attribute->name == 'href' && $element->tagName == 'a' && isset($fieldId)) {
+        $this->template->addMeta($this->template->getFieldName($fieldId), serialize(array("title"=>$element->textContent, "url"=>$attribute->value)));
+        $content .= " href=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['url'];") . "\"";
+        $content .= " target=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['target'];") . "\"";
+      } else if($attribute->name == 'style') {
+        $content .= $this->parseStyle($attribute->value);
+      } else {
+        $content .= " " . $attribute->name . "='" . $attribute->value . "'";
+      }
+    }
+    if($this->isSingleTag($element)) {
+      $content .= "/>";
+    } else {
+      $this->tab++;
+      $content .= ">";
+    }
+    return array('content' => $content, 'fieldId' => $fieldId);
+  }
+
+  private function parseInner($element, $fieldId) {
+    if(isset($this->template) && isset($fieldId)) {
       if($element->tagName == "p") {
-        $this->template->addField($field, "p");
-        //$this->template->addMeta($this->template->getFieldName($field), )
-        return "\n" . $this->tabs() . $this->ifACFExists($field, "echo nl2br(get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "', false, false));");
+        $this->template->addField($fieldId, "p");
+        //$this->template->addMeta($this->template->getFieldName($fieldId), )
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo nl2br(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "', false, false));");
       } else if(in_array($element->tagName, text_tags)) {
-        return $this->parseText($element, $field);
+        return $this->parseText($element, $fieldId);
       } else if($element->tagName == "a") {
-        return "\n" . $this->tabs() . $this->ifACFExists($field, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "')['title'];");
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['title'];");
       }
     }
     return $this->parseChildren($element);
   }
 
-  private function parseText($element, $field) {
+  private function parseText($element, $fieldId) {
     $br = false;
     $content = "";
     $value = "";
@@ -85,8 +115,8 @@ class Parser {
         $br = true;
       } else {
         if(!$created) {
-          $this->template->addField($field, $br ? "textarea" : "text");
-          $this->template->addMeta($this->template->getFieldName($field), $value);
+          $this->template->addField($fieldId, $br ? "textarea" : "text");
+          $this->template->addMeta($this->template->getFieldName($fieldId), $value);
           $created = true;
         }
         $content .= $this->parse($child);
@@ -94,10 +124,10 @@ class Parser {
     }
     if($value !== "") {
       if(!$created) {
-        $this->template->addField($field, $br ? "textarea" : "text");
-        $this->template->addMeta($this->template->getFieldName($field), $value);
+        $this->template->addField($fieldId, $br ? "textarea" : "text");
+        $this->template->addMeta($this->template->getFieldName($fieldId), $value);
       }
-      $content = "\n" . $this->tabs() . $this->ifACFExists($field, "echo the_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "')['title'];") . $content;
+      $content = "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo the_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['title'];") . $content;
     }
     return $content;
   }
@@ -108,38 +138,6 @@ class Parser {
       $content .= $this->parse($child);
     }
     return $content;
-  }
-
-  private function openTag($element) {
-    $content = "\n" . $this->tabs() . "<" . $element->tagName;
-    $field = $this->getField($element);
-    foreach($element->attributes as $attribute) {
-      if($attribute->name == 'src') {
-        if(isset($field) && $element->tagName == "img") {
-          $this->template->addField($field, $element->tagName);
-          $content .= " src='" . $this->ifACFExists($field, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "'), 'fullsize'));") . "'";
-        } else {
-          $content .= " src='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
-        }
-      } else if($attribute->name == 'href' && $element->tagName == "link" && $this->urlIsRelative($attribute->value)) {
-        $content .= " " . $attribute->name . "='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
-      } else if($attribute->name == 'href' && $element->tagName == 'a' && isset($field)) {
-        $this->template->addField($field, $element->tagName);
-        $this->template->addMeta($this->template->getFieldName($field), serialize(array("title"=>$element->textContent, "url"=>$attribute->value)));
-        $content .= " href=\"" . $this->ifACFExists($field, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "')['url'];") . "\"";
-        $content .= " target=\"" . $this->ifACFExists($field, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "')['target'];") . "\"";
-      } else if($attribute->name == 'style') {
-        $content .= $this->parseStyle($attribute->value, $field);
-      } else if(!in_array($attribute->name, keyword_attributes)) {
-        $content .= " " . $attribute->name . "='" . $attribute->value . "'";
-      }
-    }
-    if($this->isSingleTag($element)) {
-      return $content . "/>";
-    } else {
-      $this->tab++;
-      return $content . ">";
-    }
   }
 
   private function closeTag($element) {
@@ -161,11 +159,11 @@ class Parser {
     return $ret;
   }
 
-  private function getField($element) {
+  private function getFieldId($element) {
     if(isset($this->template)) {
-      foreach($element->attributes as $attribute) {
-        if($attribute->name == 'field') {
-          return $attribute->value;
+      foreach($element->childNodes as $child) {
+        if(isset($child->wholeText)) {
+          return $this->template->addField($element->tagName);
         }
       }
     }
@@ -176,7 +174,7 @@ class Parser {
     return in_array($element->tagName, single_tags);
   }
 
-  private function parseStyle($style, $field) {
+  private function parseStyle($style) {
     $content = " style='";
     $attributes = explode(";", $style);
     foreach($attributes as $attribute) {
@@ -186,11 +184,15 @@ class Parser {
         $urlStart = strpos($pair[1], "url(") + strlen("url(");
         $urlEnd = strpos(substr($pair[1], $urlStart), ")");
         $url = substr($pair[1], $urlStart, $urlEnd);
-        if(isset($this->template) && isset($field)) {
-          $url = $this->ifACFExists($field, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "'), 'fullsize'));");
-          $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd) . ";";
-          $this->template->addField($field, 'img');
-          //TODO: set meta for image
+        if(isset($this->template)) {
+          $fieldId = $this->template->addField('img');
+          if($fieldId) {
+            $url = $this->ifACFExists($fieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'), 'fullsize'));");
+            $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd) . ";";
+            //TODO: set meta for image
+          } else {
+            $content .= $attribute;
+          }
         } else if($this->urlIsRelative($url)) {
           $content .= substr($pair[1], 0, $urlStart) . "<?php echo get_template_directory_uri() ?>/" . $url . ")" . substr($pair[0], $urlEnd) . ";";
         } else {
