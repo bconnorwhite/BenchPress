@@ -20,6 +20,7 @@ ESSENCE BASE THEME
 ?How to update base theme (child theme?
 =Auto style login screen w/few brand color settings, logo, title
 +Remove sidebar & some items from profile page for non-admins
+=ACF auto updates
 
 -----
 ESSENCE EDITOR

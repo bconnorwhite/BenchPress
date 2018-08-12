@@ -17,12 +17,8 @@ function register_scripts(){
 }
 add_action( 'wp_enqueue_scripts', 'register_scripts' );
 
-/* Register Menus ---------- */
-include_once(get_template_directory() . '/inc/menus.php');
-
 /* Advanced Custom Fields ---------- */
 require(get_template_directory() . '/plugins/include.php');
-include_once(get_template_directory() . '/inc/acf.php');
 
 /* Admin Bar ---------- */
 function custom_button_example($wp_admin_bar){
