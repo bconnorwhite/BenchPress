@@ -1,6 +1,6 @@
 <?php
 
-/* Register Styles and Scripts-------- */
+/* Register Styles and Scripts--------*/
 function register_essence_editor_scripts(){
     //Essence Editor Script
     wp_register_script('essence-editor-script', get_template_directory_uri() . '/admin/js/essence-editor.js', array('jquery'), NULL, false);

@@ -65,7 +65,7 @@ class Theme {
   }
 
   function templateName() {
-    return strtolower(str_replace(" ", "", $this->name));
+    return 'wp-essence-' . strtolower(str_replace(" ", "", $this->name));
   }
 
   function activate() {
