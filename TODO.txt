@@ -48,3 +48,10 @@ ESSENCE
 -----
 +Static site explaining service (model on acf, fa style)
 +React app to manage sites (model on DO, Stripe)
+
+
+-----
+BEST PRACTICES
+-----
+=Refactor Essence Editor js
+=Prefix all the things
