@@ -4,7 +4,8 @@ const root_path = __DIR__ . "/../";
 const profile_path = root_path . "profile";
 const inc_path = __DIR__ . "/inc/";
 const scripts_path = __DIR__ . "/scripts/";
-const base_theme = __DIR__ . "/base/";
+const essence_theme = __DIR__ . "/themes/essence/";
+const base_theme = __DIR__ . "/themes/base/";
 
 include_once(inc_path . "cli.php");
 include_once(inc_path . "site.php");

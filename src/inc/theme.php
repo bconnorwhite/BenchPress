@@ -33,7 +33,7 @@ class Theme {
 
   function create() {
     //Copy base theme to site themes directory
-    exec('cp -R ' . base_theme . " " . escapeshellarg($this->path));
+    exec('mkdir ' . escapeshellarg($this->path));
     chdir($this->site->sourceDir);
     //Copy everything from source dir except .html files
     exec('find . -not -name "*.html" -type f | cpio -pdm ' . escapeshellarg($this->path));

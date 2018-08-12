@@ -22,28 +22,32 @@ class Parser {
     $elements = $dom->getElementsByTagName($tagName);
     if($elements && $elements->length > 0) {
       return $elements->item(0);
+    } else {
+      return NULL;
     }
   }
 
   function parse($element) {
     $content = "";
-    if(isset($element->tagName)) {
-      if(isset($this->template)) {
-        //Check if element is section
-        foreach($element->attributes as $attribute) {
-          if($attribute->name == 'section') {
-            $this->template->createSection($element);
-            return "\n" . $this->tabs() . '<?php include(get_template_directory() . "/section-templates/' . $attribute->value . '.php"); ?>';
+    if(isset($element)) {
+      if(isset($element->tagName)) {
+        if(isset($this->template)) {
+          //Check if element is section
+          foreach($element->attributes as $attribute) {
+            if($attribute->name == 'section') {
+              $this->template->createSection($element);
+              return "\n" . $this->tabs() . '<?php include(get_template_directory() . "/section-templates/' . $attribute->value . '.php"); ?>';
+            }
           }
         }
+        $content .= $this->openTag($element);
+        if(!$this->isSingleTag($element)) {
+          $content .= $this->parseInner($element);
+          $content .= $this->closeTag($element);
+        }
+      } else if(isset($element->wholeText)) {
+        $content .= $element->wholeText;
       }
-      $content .= $this->openTag($element);
-      if(!$this->isSingleTag($element)) {
-        $content .= $this->parseInner($element);
-        $content .= $this->closeTag($element);
-      }
-    } else if(isset($element->wholeText)) {
-      $content .= $element->wholeText;
     }
     return $content;
   }

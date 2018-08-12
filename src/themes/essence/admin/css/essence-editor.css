@@ -1,0 +1,229 @@
+#wpadminbar #wp-admin-bar-edit-mode>.ab-item:before {
+    content: "\f464";
+    top: 2px;
+}
+
+#wpadminbar #wp-admin-bar-edit-mode.save>.ab-item:before {
+    content: "\f534";
+}
+
+#essence-content-linkarea {
+	display: none;
+}
+
+[field] {
+	outline: 1px solid transparent;
+}
+[field][contenteditable] {
+	transition: 0.15s ease;
+}
+[field][contenteditable=true]:hover {
+	outline: 1px solid #00A0D2;
+	padding: 0.5em;
+}
+[field][contenteditable=true]:focus {
+	outline: 1px solid #e2e4e7;
+	padding: 0.5em;
+}
+[field][contenteditable=true] img:hover {
+  outline: 1px solid #00A0D2;
+}
+
+a[field][contenteditable=true]:focus {
+  padding-right: 0;
+}
+
+button.components-toolbar__control.components-button[data-command=unlink].essence-toolbar-hide {
+	display: none;
+	margin: 0;
+}
+
+.components-toolbar__control.components-button:not(:disabled).is-active>span.dashicons,
+.components-toolbar__control.components-button:not(:disabled):hover>span.dashicons {
+	color: #555d66;
+	box-shadow: inset 0 0 0 1px #555d66, inset 0 0 0 2px #fff;
+}
+
+.components-toolbar__control.components-button>span.dashicons {
+	padding: 5px;
+    box-sizing: content-box;
+    border-radius: 4px;
+}
+#essence-content-toolbar span.dashicons {
+	font-size: 22px;
+	height: 22px;
+	width: 22px;
+}
+#essence-content-toolbar span.dashicons:before {
+	left: -3px;
+	top: -1px;
+    position: relative;
+}
+#essence-content-toolbar {
+	position: absolute;
+	transform: translate(-1px, 0px);
+}
+#essence-content-toolbar .editor-block-toolbar {
+	display: flex;
+  flex-direction: row;
+}
+
+#essence-content-toolbar .editor-block-toolbar div:not(:first-child) .components-toolbar {
+	border-left: 0;
+	padding-right: 3px;
+}
+
+#link-modal-title {
+	color: #23282d;
+	font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+}
+
+.screen-reader-text, .screen-reader-text span, .ui-helper-hidden-accessible {
+    border: 0;
+    clip: rect(1px,1px,1px,1px);
+    -webkit-clip-path: inset(50%);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    word-wrap: normal!important;
+}
+.wp-core-ui {
+	font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+	color: #444;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+    font-size: 13px;
+    line-height: 1.4em;
+}
+.wp-core-ui .howto {
+    color: #666;
+    font-style: italic;
+    display: block;
+}
+.wp-core-ui p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 1em 0;
+}
+
+.wp-core-ui label {
+    cursor: pointer;
+	vertical-align: middle;
+}
+
+#wp-link p.howto {
+    margin: 3px 0;
+}
+
+#wp-link #link-options label span,
+#wp-link #search-panel label span.search-label {
+    display: inline-block;
+    width: 80px;
+    text-align: right;
+    padding-right: 5px;
+    max-width: 24%;
+    vertical-align: middle;
+    word-wrap: break-word;
+}
+
+#wp-link label input[type=text] {
+    margin-top: 5px;
+    width: 70%;
+}
+#wp-link input[type=text] {
+    box-sizing: border-box;
+}
+.wp-core-ui input[type=text],
+.wp-core-ui input[type=search],
+.wp-core-ui input[type=radio],
+.wp-core-ui input[type=tel],
+.wp-core-ui input[type=time],
+.wp-core-ui input[type=url],
+.wp-core-ui input[type=week],
+.wp-core-ui input[type=password],
+.wp-core-ui input[type=checkbox],
+.wp-core-ui input[type=color],
+.wp-core-ui input[type=date],
+.wp-core-ui input[type=datetime],
+.wp-core-ui input[type=datetime-local],
+.wp-core-ui input[type=email],
+.wp-core-ui input[type=month],
+.wp-core-ui input[type=number],
+.wp-core-ui select,
+.wp-core-ui textarea {
+    border: 1px solid #ddd;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
+    background-color: #fff;
+    color: #32373c;
+    outline: 0;
+    transition: 50ms border-color ease-in-out;
+}
+.wp-core-ui input, .wp-core-ui select {
+    margin: 1px;
+    padding: 3px 5px;
+}
+.wp-core-ui input, .wp-core-ui select, .wp-core-ui textarea {
+    font-size: 14px;
+    border-radius: 0;
+}
+.wp-core-ui button, .wp-core-ui input, .wp-core-ui select, .wp-core-ui textarea {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+}
+.wp-core-ui input, .wp-core-ui textarea {
+    box-sizing: border-box;
+}
+
+.wp-core-ui input[type=radio], .wp-core-ui input[type=checkbox] {
+    border: 1px solid #b4b9be;
+    background: #fff;
+    color: #555;
+    clear: none;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 0;
+    height: 16px;
+    margin: -4px 4px 0 0;
+    outline: 0;
+    padding: 0!important;
+    text-align: center;
+    vertical-align: middle;
+    width: 16px;
+    min-width: 16px;
+    -webkit-appearance: none;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+    transition: .05s border-color ease-in-out;
+}
+
+.wp-core-ui input[type=checkbox]:checked:before {
+    content: "\f147";
+    margin: -3px 0 0 -4px;
+    color: #1e8cbe;
+}
+.wp-core-ui input[type=radio]:checked:before, .wp-core-ui input[type=checkbox]:checked:before {
+    float: left;
+    display: inline-block;
+    vertical-align: middle;
+    width: 16px;
+    font: 400 21px/1 dashicons;
+    speak: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.wp-core-ui input[type=text]:focus, .wp-core-ui input[type=search]:focus, .wp-core-ui input[type=radio]:focus, .wp-core-ui input[type=tel]:focus, .wp-core-ui input[type=time]:focus, .wp-core-ui input[type=url]:focus, .wp-core-ui input[type=week]:focus, .wp-core-ui input[type=password]:focus, .wp-core-ui input[type=checkbox]:focus, .wp-core-ui input[type=color]:focus, .wp-core-ui input[type=date]:focus, .wp-core-ui input[type=datetime]:focus, .wp-core-ui input[type=datetime-local]:focus, .wp-core-ui input[type=email]:focus, .wp-core-ui input[type=month]:focus, .wp-core-ui input[type=number]:focus, .wp-core-ui select:focus, .wp-core-ui textarea:focus {
+    border-color: #5b9dd9;
+    box-shadow: 0 0 2px rgba(30,140,190,.8);
+}
+.wp-core-ui .alternate, .wp-core-ui .striped>tbody>:nth-child(odd), .wp-core-ui ul.striped>:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+.wp-core-ui a, .wp-core-ui div {
+    outline: 0;
+}
+.attachments-browser .media-toolbar-secondary {
+	min-width: 33%;
+}

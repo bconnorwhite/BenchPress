@@ -1,0 +1,50 @@
+ESSENCE
+
+-----
+BENCHPRESS
+-----
+-Set all valid tags to fields w/random id
+	-Has text node as child
+	-Is img (even if nested in text elements)
+-Use all wysiwyg for text elements (nlbr)
+-Remove "if field exists"
+
+=Repeaters (matching html structure? BSS parameter?)
+=Globals (matching html across pages? BSS parameter?)
+
+
+-----
+ESSENCE BASE THEME
+-----
+=Auto update plugins/themes/WP
+?How to update base theme (child theme?
+=Auto style login screen w/few brand color settings, logo, title
++Remove sidebar & some items from profile page for non-admins
+
+-----
+ESSENCE EDITOR
+-----
+=Add new repeating element with + or duplicate button
++Ability to add new image in paragraph
++Essence logo next to WP logo in admin bar
+?What do you do with sub text element with classes that gets overwritten by user
+
+
+-----
+CUSTOMIZER
+-----
++Widget for globals
+
+
+-----
+WORKFLOW
+-----
++Export from BSS to BenchPress
++Upload from BenchPress to Essence
++Pre generate client login info w/editor role
+
+-----
+ESSENCE
+-----
++Static site explaining service (model on acf, fa style)
++React app to manage sites (model on DO, Stripe)

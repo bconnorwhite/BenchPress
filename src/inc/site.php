@@ -56,9 +56,12 @@ class Site {
   }
 
   function createTheme() {
+    $themesDir = $this->path . themes_relative;
+    //Copy base theme
+    exec('cp -R ' . base_theme . " " . escapeshellarg($themesDir));
+    //Create child theme
     $themeName = $this->domainToName($this->domain);
     printLine("Creating theme: " . colorString($themeName, primary_color));
-    $themesDir = $this->path . themes_relative;
     $this->theme = new Theme($themeName, $themesDir, $this);
     $this->theme->create();
   }
