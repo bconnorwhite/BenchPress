@@ -8,7 +8,7 @@ function register_essence_editor_scripts(){
     wp_localize_script('essence-editor-script', 'postSettings', array('id' => get_the_ID()));
     wp_enqueue_script('essence-editor-script');
     //Essence Editor Styles
-    wp_register_style('essence-editor-style', get_template_directory_uri() . "/css/essence-editor.css");
+    wp_register_style('essence-editor-style', get_template_directory_uri() . "/admin/css/essence-editor.css");
     wp_enqueue_style('essence-editor-style');
     //Media Picker
     wp_enqueue_media();
@@ -16,7 +16,7 @@ function register_essence_editor_scripts(){
     wp_enqueue_script('wplink');
     wp_enqueue_style('editor-buttons');
 }
-add_action( 'wp_enqueue_scripts', 'register_essence_editor_scripts' );
+add_action('wp_enqueue_scripts', 'register_essence_editor_scripts');
 
 function display_wplink_stuff() {
 	require_once ABSPATH . "wp-includes/class-wp-editor.php";
