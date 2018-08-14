@@ -48,52 +48,54 @@ class Template {
     return $this->fields[$fieldId-1]['type'];
   }
 
-  function addField($element, $type) {
-    if(isset($element->tagName)) {
-      $fieldId = count($this->fields) + 1;
-      $settings = array(
-        'key' => $this->getFieldName($fieldId),
-        'label' => $fieldId,
-        'name' => $this->getFieldName($fieldId),
-        'parent' => $this->getGroup(),
-        'type' => $type,
-      );
-      if($type == 'link') {
-        $settings['return_format'] = 'array';
-        $attributes = array("title"=>$element->textContent);
-        foreach($element->attributes as $attribute) {
-          if($attribute->name == 'href') {
-            $attributes['url'] = $attribute->value;
-          } else if($attribute->name == 'target') {
-            $attributes['target'] = $attribute->value;
-          } else if($attribute->name == 'alt') {
-            $attributes['alt'] = $attribute->alt;
-          }
+  function addField($element, $type, $bgURL=false) { //$bg only used if $type == 'image'
+    $fieldId = count($this->fields) + 1;
+    $settings = array(
+      'key' => $this->getFieldName($fieldId),
+      'label' => $fieldId,
+      'name' => $this->getFieldName($fieldId),
+      'parent' => $this->getGroup(),
+      'type' => $type,
+    );
+    if($type == 'link') {
+      $settings['return_format'] = 'array';
+      $attributes = array("title"=>$element->textContent);
+      foreach($element->attributes as $attribute) {
+        if($attribute->name == 'href') {
+          $attributes['url'] = $attribute->value;
+        } else if($attribute->name == 'target') {
+          $attributes['target'] = $attribute->value;
+        } else if($attribute->name == 'alt') {
+          $attributes['alt'] = $attribute->alt;
         }
-        $this->addMeta($fieldId, serialize($attributes));
-      } else if($type == 'image') {
-        $settings['return_format'] = 'id';
+      }
+      $this->addMeta($fieldId, serialize($attributes));
+    } else if($type == 'image') {
+      $settings['return_format'] = 'id';
+      $wpId;
+      if($bgURL) {
+        $wpId = $this->site->importMedia($bgURL);
+      } else {
         foreach($element->attributes as $attribute) {
           if($attribute->name == 'src') {
             $wpId = $this->site->importMedia($attribute->value);
-            if(isset($wpId)) {
-              $this->addMeta($fieldId, $wpId);
-            }
           }
         }
-      } else if($type == 'text') {
-        $this->addMeta($fieldId, $element->textContent);
-      } else if($type == 'textarea') {
-        $settings['new_lines'] = 'br';
-        $this->addMeta($fieldId, $this->br2nl($this->innerHTML($element)));
-      } else if($type == 'wysiwyg') {
-        $settings['media_upload'] = 0;
-        $this->addMeta($fieldId, $this->br2nl($this->innerHTML($element)));
       }
-      array_push($this->fields, $settings);
-      return $fieldId;
+      if(isset($wpId)) {
+        $this->addMeta($fieldId, $wpId);
+      }
+    } else if($type == 'text') {
+      $this->addMeta($fieldId, trim($element->textContent));
+    } else if($type == 'textarea') {
+      $settings['new_lines'] = 'br';
+      $this->addMeta($fieldId, trim($this->br2nl($this->innerHTML($element))));
+    } else if($type == 'wysiwyg') {
+      $settings['media_upload'] = 0;
+      $this->addMeta($fieldId, trim($this->br2nl($this->innerHTML($element))));
     }
-    return NULL;
+    array_push($this->fields, $settings);
+    return $fieldId;
   }
 
   private function addMeta($fieldId, $value) {

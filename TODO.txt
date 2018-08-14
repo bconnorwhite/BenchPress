@@ -1,23 +1,17 @@
 ESSENCE
 
-Legend:
-- Next
-_ Easy & MVP
-= MVP
-+ Bonus
-? Not sure how to solve
-
 -----
 BENCHPRESS
 -----
-?How to edit background images?
--Instead of an array of fields & array of groups, just build groups with fields nested like acf does w/Export
-	=> This will make it easier to add new fields, since they won't be numbered 300 or whatever
-	=> Also, don't number them, just list
++Instead of an array of fields & array of groups, just build groups with fields nested like acf does w/Export
+	- This will make it easier to add new fields, since they won't be numbered 300 or whatever
+	- Also, don't number them, just list
+	- Also figure out best way to edit a site after using BenchPress. ACF UI?
++If bg and field, add a bg image button to editor toolbar
 
 
-=Repeaters (matching html structure? BSS parameter?)
-=Globals (matching html across pages? BSS parameter?) - look at options acf add on
+=> Repeaters (matching html structure? BSS parameter?)
+=> Globals (matching html across pages? BSS parameter?) - look at options acf add on
 
 -----
 ESSENCE BASE THEME
@@ -30,7 +24,7 @@ ESSENCE BASE THEME
 -----
 ESSENCE EDITOR
 -----
-=Add new repeating element with + or duplicate button
+=> Add new repeating element with + or duplicate button
 +Ability to add new image in paragraph
 +Sticky edit controls bar to box when hovering over box above (extra padding causes box to move)
 +Essence logo next to WP logo in admin bar

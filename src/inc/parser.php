@@ -101,7 +101,7 @@ class Parser {
           $content .= " " . $attribute->name . "='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
         }
       } else if($attribute->name == 'style') {
-        $content .= $this->parseStyle($attribute->value);
+        $content .= $this->parseStyle($attribute->value, $fieldId);
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
@@ -128,8 +128,6 @@ class Parser {
     }
     return $this->parseChildren($element);
   }
-
-  //str_replace(array('\\r\\n','\\n','\\r'), '<br/>',
 
   private function parseChildren($element) {
     $content = "";
@@ -162,7 +160,7 @@ class Parser {
     return in_array($element->tagName, single_tags);
   }
 
-  private function parseStyle($style) {
+  private function parseStyle($style, $fieldId) {
     $content = " style='";
     $attributes = explode(";", $style);
     foreach($attributes as $attribute) {
@@ -171,23 +169,26 @@ class Parser {
         $content .= $pair[0] . ":";
         $urlStart = strpos($pair[1], "url(") + strlen("url(");
         $urlEnd = strpos(substr($pair[1], $urlStart), ")");
-        $url = substr($pair[1], $urlStart, $urlEnd);
+        $url = trim(substr($pair[1], $urlStart, $urlEnd), "'\"");
         if(isset($this->template)) {
-          $fieldId = $this->template->addField('img');
-          if($fieldId) {
-            $url = $this->ifACFExists($fieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'), 'fullsize'));");
-            $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd) . ";";
-            //TODO: set meta for image
+          $bgFieldId = $this->template->addField(NULL, 'image', $url);
+          if($bgFieldId) {
+            $content = " bg='" . $this->template->getFieldName($bgFieldId) . "'" . $content;
+            if(!isset($fieldId)) {
+              $content = " field" . $content;
+            }
+            $url = $this->ifACFExists($bgFieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($bgFieldId) . "'), 'fullsize'));");
+            $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd);
           } else {
             $content .= $attribute;
           }
         } else if($this->urlIsRelative($url)) {
           $content .= substr($pair[1], 0, $urlStart) . "<?php echo get_template_directory_uri() ?>/" . $url . ")" . substr($pair[0], $urlEnd) . ";";
         } else {
-          $content .= $attribute;
+          $content .= $attribute . ";";
         }
       } else {
-        $content .= $attribute;
+        $content .= $attribute . ";";
       }
     }
     return $content . "'";

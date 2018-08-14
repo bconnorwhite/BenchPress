@@ -26,7 +26,7 @@ function toggleEditMode() {
 				});
 			} else {
 				fields[f].addEventListener("mousedown", fieldMousedown);
-				var subImages = fields[f].getElementsByTagName('img');
+				var subImages = fields[f].querySelectorAll('img, [bg]');
 				for(var i=0; i<subImages.length; i++) {
 					subImages[i].addEventListener('mousedown', fieldMousedown);
 				}
@@ -94,13 +94,20 @@ function clearSelection() {
 function fieldMousedown(e) {
 	var field = getParentField(e.target);
 	if(field) {
-		if(e.target.tagName == 'IMG') {
+		if(e.target.tagName == 'IMG' || e.target.getAttribute('bg')) {
 			field = e.target;
 		}
-		if(field.tagName == 'IMG') {
+		if(e.target.tagName == 'IMG') {
 			fileFrame.on('select', function() {
 				var attatchment = fileFrame.state().get('selection').first().toJSON();
 				field.src = attatchment.url;
+				field.setAttribute('media-id', attatchment.id);
+			});
+			fileFrame.open();
+		} else if(e.target.getAttribute('bg')) {
+			fileFrame.on('select', function() {
+				var attatchment = fileFrame.state().get('selection').first().toJSON();
+				field.style.backgroundImage = attatchment.url ? "url(" + attatchment.url + ")" : "";
 				field.setAttribute('media-id', attatchment.id);
 			});
 			fileFrame.open();
@@ -176,7 +183,7 @@ function hasParentTag(element, tagname) {
 function getParentField(element) {
 	if(!element) {
 		return false;
-	} else if(element.getAttribute('field')) {
+	} else if(element.hasAttribute('field')) {
 		return element;
 	} else {
 		return element.parentNode && getParentField(element.parentNode);
