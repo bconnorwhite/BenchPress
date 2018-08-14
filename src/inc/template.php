@@ -37,7 +37,7 @@ class Template {
   }
 
   function getGroup() {
-    return "group-" . str_replace(" ", "_", basename($this->path, ".php"));
+    return str_replace(" ", "_", basename($this->path, ".php"));
   }
 
   function getFieldName($field) {
@@ -88,7 +88,7 @@ class Template {
         $this->addMeta($fieldId, $this->br2nl($this->innerHTML($element)));
       } else if($type == 'wysiwyg') {
         $settings['media_upload'] = 0;
-        $this->addMeta($fieldId, $this->innerHTML($element));
+        $this->addMeta($fieldId, $this->br2nl($this->innerHTML($element)));
       }
       array_push($this->fields, $settings);
       return $fieldId;

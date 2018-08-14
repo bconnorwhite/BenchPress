@@ -119,15 +119,17 @@ class Parser {
     if(isset($this->template) && isset($fieldId)) {
       $type = $this->template->getFieldType($fieldId);
       if($type == 'wysiwyg') {
-        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo nl2br(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "', false, false));");
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo str_replace(array(\"\\r\\n\", \"\\n\", \"\\r\"), '', nl2br(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "', false, false)));");
       } else if($type == 'textarea' || $type == 'text') {
-        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "the_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "');");
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo str_replace(array(\"\\r\\n\", \"\\n\", \"\\r\"), '', get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'));");
       } else if($type == "a") {
         return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['title'];");
       }
     }
     return $this->parseChildren($element);
   }
+
+  //str_replace(array('\\r\\n','\\n','\\r'), '<br/>',
 
   private function parseChildren($element) {
     $content = "";

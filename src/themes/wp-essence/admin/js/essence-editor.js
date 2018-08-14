@@ -32,6 +32,12 @@ function toggleEditMode() {
 				}
 			}
 			fields[f].contentEditable = true;
+			fields[f].onkeydown = function(e) {
+				if(e.keyCode === 13) { //ENTER
+					document.execCommand('insertHTML', false, '<br />');
+					return false;
+				}
+			}
 		}
 	} else if(editing) {
 		stopEditing();
@@ -51,7 +57,7 @@ function toggleEditMode() {
 					'target': fields[f].target,
 				}
 			} else {
-				meta[fields[f].getAttribute('field')] = fields[f].innerHTML.trim();
+				meta[fields[f].getAttribute('field')] = fields[f].innerHTML.trim().replace(/<br ?\/?>/g, "\n");
 			}
 		}
 		saveUpdates(meta);

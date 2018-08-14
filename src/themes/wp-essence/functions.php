@@ -5,7 +5,7 @@ function remove_editor_init() {
 }
 add_action('init', 'remove_editor_init');
 
-/*Essence Editor-------- */
+/* Essence Editor-------- */
 if(current_user_can('administrator') || current_user_can('editor') || current_user_can('author') || current_user_can('contributor')) {
   include_once(get_template_directory() . '/admin/php/essence-editor.php');
 }
