@@ -82,6 +82,9 @@ class Parser {
 
   private function openTag($element, $fieldId) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
+    if(isset($fieldId) && isset($this->template)) {
+      $content .= " field='" . $this->template->getFieldName($fieldId) . "'";
+    }
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
         if(isset($fieldId) && $element->tagName == "img") {
