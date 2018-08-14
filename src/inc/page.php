@@ -36,9 +36,12 @@ class Page {
   function createHeader($themePath) {
     $this->themePath = $themePath;
     $parser = new Parser(1);
-    $start = "<!DOCTYPE html>\n<html lang='en'>";
-    $content = $parser->parse($parser->getElementByTagName($this->inputPath, 'head'));
-    file_put_contents($themePath . header, $start . $content);
+    $head = $parser->getElementByTagName($this->inputPath, 'head');
+    if(isset($head)) {
+      $start = "<!DOCTYPE html>\n<html lang='en'>";
+      $content = $parser->parse($head);
+      file_put_contents($themePath . header, $start . $content);
+    }
   }
 
 }
