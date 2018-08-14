@@ -1,6 +1,5 @@
 <?php
 
-include_once('section.php');
 include_once('parser.php');
 
 class Template {
@@ -10,8 +9,6 @@ class Template {
   var $site;
   var $fields;
   var $meta;
-  var $sectionDir;
-  var $sections;
 
   function __construct($inputPath, $outputDir, $site) {
     $this->inputPath = $inputPath;
@@ -19,11 +16,9 @@ class Template {
     $this->site = $site;
     $this->fields = [];
     $this->meta = [];
-    $this->sections = [];
   }
 
-  function create($sectionDir) {
-    $this->sectionDir = $sectionDir;
+  function create() {
     if(isset($this->path) && isset($this->inputPath)) {
       $parser = new Parser(0, $this);
       $start = "<?php\n/**\n * Template Name: " . $this->getName() . " Page Template\n */\nget_header(); ?>";
@@ -41,19 +36,6 @@ class Template {
     return toWords(basename($this->path, ".php"));
   }
 
-  function createSection($element) {
-    $section = new Section($element, $this->site);
-    if($section->setPath($this->sectionDir)) {
-      foreach($this->sections as $s) {
-        if($s->path == $section->path) {
-          return;
-        }
-      }
-      $section->create();
-      array_push($this->sections, $section);
-    }
-  }
-
   function getGroup() {
     return "group-" . str_replace(" ", "_", basename($this->path, ".php"));
   }
@@ -62,29 +44,51 @@ class Template {
     return $this->getGroup() . "-" . $field;
   }
 
-  function addField($tag) {
-    if(isset($tag)) {
+  function getFieldType($fieldId) {
+    return $this->fields[$fieldId-1]['type'];
+  }
+
+  function addField($element, $type) {
+    if(isset($element->tagName)) {
       $fieldId = count($this->fields) + 1;
       $settings = array(
-        'key' => $this->getGroup() . "-field-" . $fieldId,
+        'key' => $this->getFieldName($fieldId),
         'label' => $fieldId,
         'name' => $this->getFieldName($fieldId),
         'parent' => $this->getGroup(),
+        'type' => $type,
       );
-      if($tag == 'a') {
-        $settings['type'] = 'link';
+      if($type == 'link') {
         $settings['return_format'] = 'array';
-      } else if($tag == 'img') {
-        $settings['type'] = 'image';
+        $attributes = array("title"=>$element->textContent);
+        foreach($element->attributes as $attribute) {
+          if($attribute->name == 'href') {
+            $attributes['url'] = $attribute->value;
+          } else if($attribute->name == 'target') {
+            $attributes['target'] = $attribute->value;
+          } else if($attribute->name == 'alt') {
+            $attributes['alt'] = $attribute->alt;
+          }
+        }
+        $this->addMeta($fieldId, serialize($attributes));
+      } else if($type == 'image') {
         $settings['return_format'] = 'id';
-      } else if($tag == 'text') {
-        $settings['type'] = 'text';
-      } else if($tag == 'textarea') {
-        $settings['type'] = 'textarea';
+        foreach($element->attributes as $attribute) {
+          if($attribute->name == 'src') {
+            $wpId = $this->site->importMedia($attribute->value);
+            if(isset($wpId)) {
+              $this->addMeta($fieldId, $wpId);
+            }
+          }
+        }
+      } else if($type == 'text') {
+        $this->addMeta($fieldId, $element->textContent);
+      } else if($type == 'textarea') {
         $settings['new_lines'] = 'br';
-      } else if($tag == 'p') {
-        $settings['type'] = 'wysiwyg';
+        $this->addMeta($fieldId, $this->innerHTML($element));
+      } else if($type == 'wysiwyg') {
         $settings['media_upload'] = 0;
+        $this->addMeta($fieldId, $this->innerHTML($element));
       }
       array_push($this->fields, $settings);
       return $fieldId;
@@ -92,8 +96,12 @@ class Template {
     return NULL;
   }
 
-  function addMeta($key, $value) {
-    array_push($this->meta, array("key"=>$key, "value"=>$value));
+  private function addMeta($fieldId, $value) {
+    array_push($this->meta, array("key"=>$this->getFieldName($fieldId), "value"=>$value));
+  }
+
+  private function innerHTML($element) {
+    return implode(array_map([$element->ownerDocument,"saveHTML"], iterator_to_array($element->childNodes)));
   }
 
   /* ----------

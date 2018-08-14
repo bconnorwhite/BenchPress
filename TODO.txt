@@ -1,26 +1,34 @@
 ESSENCE
 
+Legend:
+- Next
+_ Easy & MVP
+= MVP
++ Bonus
+? Not sure how to solve
+
 -----
 BENCHPRESS
 -----
+-Instead of an array of fields & array of groups, just build groups with fields nested like acf does w/Export
+	=> This will make it easier to add new fields, since they won't be numbered 300 or whatever
+	=> Also, don't number them, just list
 -Set all valid tags to fields w/random id
 	-Has text node as child
-	-Is img (even if nested in text elements)
 -Use all wysiwyg for text elements (nlbr)
--Remove "if field exists"
+_Remove "if field exists"
+?How to edit background images?
 
 =Repeaters (matching html structure? BSS parameter?)
-=Globals (matching html across pages? BSS parameter?)
-
+=Globals (matching html across pages? BSS parameter?) - look at options acf add on
 
 -----
 ESSENCE BASE THEME
 -----
-=Auto update plugins/themes/WP
-?How to update base theme (child theme?
-=Auto style login screen w/few brand color settings, logo, title
++Auto update plugins/themes/WP
++Auto push parent theme updates
++Way to style login screen w/few brand color settings, logo, title (customizer?)
 +Remove sidebar & some items from profile page for non-admins
-=ACF auto updates
 
 -----
 ESSENCE EDITOR
@@ -30,12 +38,10 @@ ESSENCE EDITOR
 +Essence logo next to WP logo in admin bar
 ?What do you do with sub text element with classes that gets overwritten by user
 
-
 -----
 CUSTOMIZER
 -----
 +Widget for globals
-
 
 -----
 WORKFLOW
@@ -54,5 +60,5 @@ ESSENCE
 -----
 BEST PRACTICES
 -----
-=Refactor Essence Editor js
-=Prefix all the things
++Refactor Essence Editor js
++Prefix all the things

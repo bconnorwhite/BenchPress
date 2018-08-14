@@ -30,19 +30,10 @@ class Parser {
     $content = "";
     if(isset($element)) {
       if(isset($element->tagName)) {
-        if(isset($this->template)) {
-          //Check if element is section
-          foreach($element->attributes as $attribute) {
-            if($attribute->name == 'section') {
-              $this->template->createSection($element);
-              return "\n" . $this->tabs() . '<?php include(get_template_directory() . "/section-templates/' . $attribute->value . '.php"); ?>';
-            }
-          }
-        }
-        $openTag = $this->openTag($element); //array(content, fieldId);
-        $content .= $openTag['content'];
+        $fieldId = $this->getFieldId($element);
+        $content .= $this->openTag($element, $fieldId);
         if(!$this->isSingleTag($element)) {
-          $content .= $this->parseInner($element, $openTag['fieldId']);
+          $content .= $this->parseInner($element, $fieldId);
           $content .= $this->closeTag($element);
         }
       } else if(isset($element->wholeText)) {
@@ -56,9 +47,41 @@ class Parser {
   * Private Functions
   ---------- */
 
-  private function openTag($element) {
+  private function getFieldId($element) {
+    if(isset($this->template)) {
+      if($element->tagName == 'a') {
+        return $this->template->addField($element, 'link');
+      } else if($element->tagName == 'img') {
+        return $this->template->addField($element, 'image');
+      } else {
+        $hasText = false;
+        $hasBR = false;
+        $hasTags = false;
+        foreach($element->childNodes as $child) {
+          if(isset($child->wholeText)) { //Has a text node
+            $hasText = true;
+          } else if($child->tagName == 'br') {
+            $br = true;
+          } else {
+            $hasTags = true;
+          }
+        }
+        if($hasText) {
+          if($hasTags) {
+            return $this->template->addField($element, 'wysiwyg');
+          } else if($hasBR || strlen($element->textContent) > 40) {
+            return $this->template->addField($element, 'textarea');
+          } else {
+            return $this->template->addField($element, 'text');
+          }
+        }
+      }
+    }
+    return NULL;
+  }
+
+  private function openTag($element, $fieldId) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
-    $fieldId = $this->getFieldId($element);
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
         if(isset($fieldId) && $element->tagName == "img") {
@@ -66,12 +89,14 @@ class Parser {
         } else {
           $content .= " src='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
         }
-      } else if($attribute->name == 'href' && $element->tagName == "link" && $this->urlIsRelative($attribute->value)) {
-        $content .= " " . $attribute->name . "='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
-      } else if($attribute->name == 'href' && $element->tagName == 'a' && isset($fieldId)) {
-        $this->template->addMeta($this->template->getFieldName($fieldId), serialize(array("title"=>$element->textContent, "url"=>$attribute->value)));
-        $content .= " href=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['url'];") . "\"";
-        $content .= " target=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['target'];") . "\"";
+      } else if($attribute->name == 'href') {
+        if($element->tagName == 'a' && isset($fieldId)) {
+          $content .= " href=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['url'];") . "\"";
+          $content .= " target=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['target'];") . "\"";
+          $content .= " alt=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['alt'];") . "\"";
+        } else if($element->tagName == "link" && $this->urlIsRelative($attribute->value)) {
+          $content .= " " . $attribute->name . "='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
+        }
       } else if($attribute->name == 'style') {
         $content .= $this->parseStyle($attribute->value);
       } else {
@@ -84,52 +109,21 @@ class Parser {
       $this->tab++;
       $content .= ">";
     }
-    return array('content' => $content, 'fieldId' => $fieldId);
+    return $content;
   }
 
   private function parseInner($element, $fieldId) {
     if(isset($this->template) && isset($fieldId)) {
-      if($element->tagName == "p") {
-        $this->template->addField($fieldId, "p");
-        //$this->template->addMeta($this->template->getFieldName($fieldId), )
+      $type = $this->template->getFieldType($fieldId);
+      if($type == 'wysiwyg') {
         return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo nl2br(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "', false, false));");
-      } else if(in_array($element->tagName, text_tags)) {
-        return $this->parseText($element, $fieldId);
-      } else if($element->tagName == "a") {
+      } else if($type == 'textarea' || $type == 'text') {
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "the_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "');");
+      } else if($type == "a") {
         return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['title'];");
       }
     }
     return $this->parseChildren($element);
-  }
-
-  private function parseText($element, $fieldId) {
-    $br = false;
-    $content = "";
-    $value = "";
-    $created = false;
-    foreach($element->childNodes as $child) {
-      if($content == "" && !isset($child->tagName) && $child->wholeText) {
-        $value .= $child->wholeText;
-      } else if($content == "" && $child->tagName == 'br') {
-        $value .= "<br/>";
-        $br = true;
-      } else {
-        if(!$created) {
-          $this->template->addField($fieldId, $br ? "textarea" : "text");
-          $this->template->addMeta($this->template->getFieldName($fieldId), $value);
-          $created = true;
-        }
-        $content .= $this->parse($child);
-      }
-    }
-    if($value !== "") {
-      if(!$created) {
-        $this->template->addField($fieldId, $br ? "textarea" : "text");
-        $this->template->addMeta($this->template->getFieldName($fieldId), $value);
-      }
-      $content = "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo the_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['title'];") . $content;
-    }
-    return $content;
   }
 
   private function parseChildren($element) {
@@ -157,17 +151,6 @@ class Parser {
       $ret .= "\t";
     }
     return $ret;
-  }
-
-  private function getFieldId($element) {
-    if(isset($this->template)) {
-      foreach($element->childNodes as $child) {
-        if(isset($child->wholeText)) {
-          return $this->template->addField($element->tagName);
-        }
-      }
-    }
-    return NULL;
   }
 
   private function isSingleTag($element) {

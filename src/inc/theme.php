@@ -1,7 +1,6 @@
 <?php
 
 const page_templates = "/page-templates/";
-const section_templates = "/section-templates/";
 const img = "/img/";
 const inc = "/inc/";
 const acf = inc . "acf.php";
@@ -47,8 +46,7 @@ class Theme {
       $inputPath = $this->site->sourceDir . $file;
       if(pathinfo($file, PATHINFO_EXTENSION) == "html") { //Check that file is valid
         $templateDir = $this->path() . page_templates;
-        $sectionDir = $this->path() . section_templates;
-        $page = new Page($inputPath, $templateDir, $sectionDir, $this->site);
+        $page = new Page($inputPath, $templateDir, $this->site);
         if(!$this->isDuplicate($page->template)) {
           $page->createTemplate();
           $page->createHeader($this->path());
@@ -146,8 +144,8 @@ class Theme {
     file_put_contents($this->path() . menus, $content);
   }
 
+  //Check that output path doesn't conflict with any exisiting template
   private function isDuplicate($template) {
-    //Check that output path doesn't conflict with any exisiting template
     foreach($this->templates as $existingTemplate) {
       if($existingTemplate->path == $template->path) {
         return true;

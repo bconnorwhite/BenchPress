@@ -130,11 +130,9 @@ class Site {
         $this->wpCLI("wp option update page_on_front " . $id);
       }
       //Set content meta
-      foreach($page->template->sections as $section) {
-        foreach($section->meta as $meta) {
-          if(isset($meta['key']) && isset($meta['value'])) {
-            $this->wpCLI("wp post meta add $id " . escapeshellarg($meta['key']) . " " . escapeshellarg($meta['value']));
-          }
+      foreach($page->template->meta as $meta) {
+        if(isset($meta['key']) && isset($meta['value'])) {
+          $this->wpCLI("wp post meta add $id " . escapeshellarg($meta['key']) . " " . escapeshellarg($meta['value']));
         }
       }
       printLine(colorString(checkmark, success_color) . " " . $page->getName());

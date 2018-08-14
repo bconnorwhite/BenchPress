@@ -14,10 +14,9 @@ class Page {
   var $template;
   var $themePath;
 
-  function __construct($inputPath, $templateDir, $sectionDir, $site) {
+  function __construct($inputPath, $templateDir, $site) {
     $this->inputPath = $inputPath;
     $this->templateDir = $templateDir;
-    $this->sectionDir = $sectionDir;
     $this->site = $site;
     $this->template = new Template($this->inputPath, $this->templateDir, $site);
   }
@@ -28,7 +27,7 @@ class Page {
 
   function createTemplate() {
     if(isset($this->template)) {
-      $this->template->create($this->sectionDir);
+      $this->template->create();
     } else {
       printError("Missing template");
     }
