@@ -85,7 +85,7 @@ class Template {
         $this->addMeta($fieldId, $element->textContent);
       } else if($type == 'textarea') {
         $settings['new_lines'] = 'br';
-        $this->addMeta($fieldId, $this->innerHTML($element));
+        $this->addMeta($fieldId, $this->br2nl($this->innerHTML($element)));
       } else if($type == 'wysiwyg') {
         $settings['media_upload'] = 0;
         $this->addMeta($fieldId, $this->innerHTML($element));
@@ -102,6 +102,10 @@ class Template {
 
   private function innerHTML($element) {
     return implode(array_map([$element->ownerDocument,"saveHTML"], iterator_to_array($element->childNodes)));
+  }
+
+  private function br2nl($input) {
+    return preg_replace('/<br\s?\/?>/ius', "\n", str_replace("\n","",str_replace("\r","", htmlspecialchars_decode($input))));
   }
 
   /* ----------
