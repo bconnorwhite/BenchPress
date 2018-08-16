@@ -86,17 +86,19 @@ class Parser {
     }
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
-        if(isset($fieldId) && $element->tagName == "img") {
+        if($element->tagName == "img" && isset($fieldId)) {
           $content .= " src='" . $this->ifACFExists($fieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'), 'fullsize'));") . "'";
-        } else {
+        } else if($this->urlIsRelative($attribute->value)) {
           $content .= " src='<?php echo get_stylesheet_directory_uri()?>/" . $attribute->value . "'";
+        } else {
+          $content .= " " . $attribute->name . "='" . $attribute->value . "'";
         }
       } else if($attribute->name == 'href') {
         if($element->tagName == 'a' && isset($fieldId)) {
           $content .= " href=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['url'];") . "\"";
           $content .= " target=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['target'];") . "\"";
           $content .= " alt=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['alt'];") . "\"";
-        } else if($element->tagName == "link" && $this->urlIsRelative($attribute->value)) {
+        } else if($this->urlIsRelative($attribute->value)) {
             $content .= " " . $attribute->name . "='<?php echo get_stylesheet_directory_uri()?>/" . $attribute->value . "'";
         } else {
           $content .= " " . $attribute->name . "='" . $attribute->value . "'";

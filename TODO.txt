@@ -80,3 +80,4 @@ BEST PRACTICES
 Stretch:
 -----
 -Icon editor
+-Blog functionality
