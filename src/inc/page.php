@@ -12,7 +12,6 @@ class Page {
   var $sectionDir;
   var $site;
   var $template;
-  var $themePath;
 
   function __construct($inputPath, $templateDir, $site) {
     $this->inputPath = $inputPath;
@@ -33,14 +32,13 @@ class Page {
     }
   }
 
-  function createHeader($themePath) {
-    $this->themePath = $themePath;
+  function createHeader($childThemePath) {
     $parser = new Parser(1);
     $head = $parser->getElementByTagName($this->inputPath, 'head');
     if(isset($head)) {
       $start = "<!DOCTYPE html>\n<html lang='en'>";
       $content = $parser->parse($head);
-      file_put_contents($themePath . header, $start . $content);
+      file_put_contents($childThemePath . header, $start . $content);
     }
   }
 

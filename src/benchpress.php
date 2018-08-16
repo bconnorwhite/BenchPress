@@ -13,6 +13,12 @@ include_once(inc_path . "site.php");
 
 if($argc > 1) {
   $sourceDir = $argv[1];
+  if(substr($sourceDir, 0, 1) !== "/" && substr($sourceDir, 0, 1) !== "~") {
+    $sourceDir = getcwd() . "/" . $sourceDir;
+  }
+  if(substr($sourceDir, strlen($sourceDir)-1, 1) !== '/') {
+    $sourceDir = $sourceDir . "/";
+  }
   if($argc > 4) {
     $domain = $argv[2];
     $username = $argv[3];

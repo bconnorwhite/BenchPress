@@ -1,5 +1,11 @@
 ESSENCE
 
+Bugs:
+
+
+
+
+
 -----
 BENCHPRESS
 -----
@@ -25,6 +31,7 @@ ESSENCE BASE THEME
 ESSENCE EDITOR
 -----
 => Add new repeating element with + or duplicate button
++Add a cancel button
 +Ability to add new image in paragraph
 +Sticky edit controls bar to box when hovering over box above (extra padding causes box to move)
 +Essence logo next to WP logo in admin bar
@@ -48,9 +55,28 @@ ESSENCE
 +Static site explaining service (model on acf, fa style)
 +React app to manage sites (model on DO, Stripe)
 
+Businesses
+Photographers
+Developers (eventually)
+
+Essence Editor
+Essence Hosting
+
+
 
 -----
 BEST PRACTICES
 -----
 +Refactor Essence Editor js
 +Prefix all the things
+
+
+
+
+
+
+
+-----
+Stretch:
+-----
+-Icon editor

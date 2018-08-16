@@ -1,7 +1,6 @@
 <?php
 
 const single_tags = ['meta', 'link', 'img', 'br'];
-const text_tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span'];
 
 class Parser {
 
@@ -90,7 +89,7 @@ class Parser {
         if(isset($fieldId) && $element->tagName == "img") {
           $content .= " src='" . $this->ifACFExists($fieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'), 'fullsize'));") . "'";
         } else {
-          $content .= " src='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
+          $content .= " src='<?php echo get_stylesheet_directory_uri()?>/" . $attribute->value . "'";
         }
       } else if($attribute->name == 'href') {
         if($element->tagName == 'a' && isset($fieldId)) {
@@ -98,7 +97,9 @@ class Parser {
           $content .= " target=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['target'];") . "\"";
           $content .= " alt=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['alt'];") . "\"";
         } else if($element->tagName == "link" && $this->urlIsRelative($attribute->value)) {
-          $content .= " " . $attribute->name . "='<?php echo get_template_directory_uri()?>/" . $attribute->value . "'";
+            $content .= " " . $attribute->name . "='<?php echo get_stylesheet_directory_uri()?>/" . $attribute->value . "'";
+        } else {
+          $content .= " " . $attribute->name . "='" . $attribute->value . "'";
         }
       } else if($attribute->name == 'style') {
         $content .= $this->parseStyle($attribute->value, $fieldId);
@@ -178,16 +179,16 @@ class Parser {
               $content = " field" . $content;
             }
             $url = $this->ifACFExists($bgFieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($bgFieldId) . "'), 'fullsize'));");
-            $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd);
+            $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd) . ";";
           } else {
-            $content .= $attribute;
+            $content .= $pair[1] . ";";
           }
         } else if($this->urlIsRelative($url)) {
-          $content .= substr($pair[1], 0, $urlStart) . "<?php echo get_template_directory_uri() ?>/" . $url . ")" . substr($pair[0], $urlEnd) . ";";
+          $content .= substr($pair[1], 0, $urlStart) . "<?php echo get_stylesheet_directory_uri() ?>/" . $url . ")" . substr($pair[0], $urlEnd) . ";";
         } else {
-          $content .= $attribute . ";";
+          $content .= $pair[1] . ";";
         }
-      } else {
+      } else if($attribute !== "") {
         $content .= $attribute . ";";
       }
     }
