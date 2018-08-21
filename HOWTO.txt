@@ -1,0 +1,8 @@
+-Top level tags inside <body> should be sections
+-When duplicating an element, use a class name on that element and style all subcomponents relative to that classname
+  (i.e. .profile h2 { font-size: 1rem; })
+  This way when you duplicate the element you won't have to change styles in two places
+
+-Start with mobile
+
+-Use multiple columns in a row with width = 12 instead of multiple rows

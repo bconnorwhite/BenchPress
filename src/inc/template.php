@@ -9,6 +9,7 @@ class Template {
   var $site;
   var $fields;
   var $meta;
+  var $repeater;
 
   function __construct($inputPath, $outputDir, $site) {
     $this->inputPath = $inputPath;
@@ -16,6 +17,7 @@ class Template {
     $this->site = $site;
     $this->fields = [];
     $this->meta = [];
+    $this->repeater = null;
   }
 
   function create() {
@@ -40,24 +42,52 @@ class Template {
     return str_replace(" ", "_", basename($this->path, ".php"));
   }
 
-  function getFieldName($field) {
-    return $this->getGroup() . "-" . $field;
+  function getFieldName($fieldId) {
+    if(isset($this->repeater)) {
+      return "sub-" . $fieldId;
+    } else {
+      return $this->getGroup() . "-" . $fieldId;
+    }
   }
 
-  function getFieldType($fieldId) {
-    return $this->fields[$fieldId-1]['type'];
+  function getFieldId($fieldName) {
+    $tmp = explode("-", $fieldName);
+    return end($tmp);
+  }
+
+  function getFieldType($fieldName) {
+    if(isset($this->repeater)) {
+      return $this->repeater['sub_fields'][$this->getFieldId($fieldName)]['type'];
+    } else {
+      return $this->fields[$this->getFieldId($fieldName)-1]['type'];
+    }
+  }
+
+  function loopRepeater() {
+    if(isset($this->repeater)) {
+      $this->repeater['temp']['field'] = 0;
+      $this->repeater['temp']['counter'] += 1;
+    }
   }
 
   function addField($element, $type, $bgURL=false) { //$bg only used if $type == 'image'
-    $fieldId = count($this->fields) + 1;
+    $fieldId = null;
+    if(isset($this->repeater)) {
+      $fieldId = $this->repeater['temp']['field'];
+      $this->repeater['temp']['field'] += 1;
+    } else {
+      $fieldId = count($this->fields) + 1;
+    }
     $settings = array(
       'key' => $this->getFieldName($fieldId),
       'label' => $fieldId,
       'name' => $this->getFieldName($fieldId),
-      'parent' => $this->getGroup(),
       'type' => $type,
     );
-    if($type == 'link') {
+    if($type == 'repeater') {
+      $settings['sub_fields'] = array();
+      $settings['temp'] = array("counter"=>0, "field"=>0, "parent"=>&$this->repeater);
+    } else if($type == 'link') {
       $settings['return_format'] = 'array';
       $attributes = array("title"=>$element->textContent);
       foreach($element->attributes as $attribute) {
@@ -94,12 +124,42 @@ class Template {
       $settings['media_upload'] = 0;
       $this->addMeta($fieldId, trim($this->br2nl($this->innerHTML($element))));
     }
-    array_push($this->fields, $settings);
-    return $fieldId;
+    if(isset($this->repeater)) {
+      if($this->repeater['temp']['counter'] == 0) {
+        array_push($this->repeater['sub_fields'], $settings);
+      }
+    } else {
+      $settings['parent'] = $this->getGroup();
+      array_push($this->fields, $settings);
+    }
+    if($type == 'repeater') {
+      $this->repeater = &$this->fields[count($this->fields)-1];
+    }
+    return $settings['key'];
+  }
+
+  function closeRepeater() {
+    if(isset($this->repeater)) {
+      array_push($this->meta, array("key"=>$this->repeater['key'], "value"=>($this->repeater['temp']['counter']+1)));
+      if(isset($this->repeater['parent'])) {
+        unset($this->repeater['temp']);
+        unset($this->repeater);
+      } else {
+        $temp = &$this->repeater['temp'];
+        $this->repeater = $this->repeater['temp']['parent'];
+        unset($temp);
+      }
+    } else {
+      printError("ERROR: template.php: closeRepeater()");
+    }
   }
 
   private function addMeta($fieldId, $value) {
-    array_push($this->meta, array("key"=>$this->getFieldName($fieldId), "value"=>$value));
+    if(isset($this->repeater)) {
+      array_push($this->meta, array("key"=> $this->repeater['key'] . "_" . $this->repeater['temp']['counter'] . "_" . $this->getFieldName($fieldId), "value"=>$value));
+    } else {
+      array_push($this->meta, array("key"=>$this->getFieldName($fieldId), "value"=>$value));
+    }
   }
 
   private function innerHTML($element) {

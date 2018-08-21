@@ -7,12 +7,10 @@ class Parser {
   var $template;
 
   private $tab;
-  private $inRepeater;
 
   function __construct($tab, $template=NULL) {
     $this->tab = $tab;
     $this->template = $template;
-    $this->inRepeater = false;
   }
 
   function getElementByTagName($inputPath, $tagName) {
@@ -28,15 +26,27 @@ class Parser {
   function parse($element) {
     $content = "";
     if(isset($element)) {
-      if(isset($element->tagName)) {
-        $fieldId = $this->getFieldId($element);
-        $content .= $this->openTag($element, $fieldId);
+      if(isset($element->wholeText)) {
+        $content .= $element->wholeText;
+      } else if(isset($element->tagName)) {
+        $fieldName = $this->getFieldName($element);
+        $firstInRepeater = $this->firstInRepeater($element);
+        if($firstInRepeater) {
+          $content .= $this->openRepeater();
+        }
+        $content .= $this->openTag($element, $fieldName);
         if(!$this->isSingleTag($element)) {
-          $content .= $this->parseInner($element, $fieldId);
+          $content .= $this->parseInner($element, $fieldName);
           $content .= $this->closeTag($element);
         }
-      } else if(isset($element->wholeText)) {
-        $content .= $element->wholeText;
+        if($this->lastInRepeater($element)) {
+          $content = $this->closeRepeater(); //If last only return close to the repeater
+        } else if($this->inRepeater($element)) {
+          $this->template->loopRepeater();
+          if(!$firstInRepeater) { //Only return if first or last in repeater
+            return "";
+          }
+        }
       }
     }
     return $content;
@@ -46,29 +56,78 @@ class Parser {
   * Private Functions
   ---------- */
 
-  private function getFieldId($element) {
+  private function firstInRepeater($element) {
+    return isset($this->template) && isset($element->nextSibling) && $this->matchingStructure($element, $element->nextSibling) && (!isset($element->previousSibling) || !$this->matchingStructure($element, $element->previousSibling));
+  }
+
+  private function lastInRepeater($element) {
+    return isset($this->template) && isset($element->previousSibling) && $this->matchingStructure($element, $element->previousSibling) && (!isset($element->nextSibling) || !$this->matchingStructure($element, $element->nextSibling));
+  }
+
+  private function inRepeater($element) {
+    return isset($this->template) && (isset($element->previousSibling) && $this->matchingStructure($element, $element->previousSibling)) || (isset($element->nextSibling) && $this->matchingStructure($element, $element->nextSibling));
+  }
+
+  private function matchingStructure($element, $sibling) {
+    if(isset($element->wholeText) || isset($sibling->wholeText)) {
+      return true;
+    } else if(isset($element->tagName) && isset($sibling->tagName)) {
+      if($element->tagName == $sibling->tagName) {
+        if($element->tagName == 'A') {
+          return true;
+        } else if(count($element->attributes) == count($sibling->attributes) && count($element->childNodes) == count($sibling->childNodes)) {
+          foreach($element->attributes as $attribute) {
+            if(!isset($sibling->attributes[$attribute->name]) || $sibling->getAttribute($attribute->name) !== $attribute->value) {
+              return false;
+            }
+          }
+          if($this->getStructure($element)['hasText'] && $this->getStructure($sibling)['hasText']) {
+            return true;
+          } else {
+            for($c=0; $c<count($element->childNodes); $c++) {
+              if(!$this->matchingStructure($element->childNodes[$c], $sibling->childNodes[$c])) {
+                return false;
+              }
+            }
+            return true;
+          }
+        }
+      } else {
+        return false;
+      }
+    } else { //Shouldn't happen...
+      printError("ERROR: parser.php: matchingStructure()", failure_color);
+      var_dump($element);
+      var_dump($sibling);
+      return false;
+    }
+  }
+
+  private function openRepeater() {
+    $fieldName = $this->template->addField(null, 'repeater');
+    $content = "\n" . $this->tabs() . "<?php while(have_rows('" . $fieldName . "')) { the_row(); ?>";
+    $this->tab++;
+    return $content;
+  }
+
+  private function closeRepeater() {
+    $this->template->closeRepeater();
+    $this->tab--;
+    return "\n" . $this->tabs() . "<?php } ?>";
+  }
+
+  private function getFieldName($element) {
     if(isset($this->template)) {
       if($element->tagName == 'a') {
         return $this->template->addField($element, 'link');
       } else if($element->tagName == 'img') {
         return $this->template->addField($element, 'image');
       } else {
-        $hasText = false;
-        $hasBR = false;
-        $hasTags = false;
-        foreach($element->childNodes as $child) {
-          if(isset($child->wholeText)) { //Has a text node
-            $hasText = true;
-          } else if($child->tagName == 'br') {
-            $br = true;
-          } else {
-            $hasTags = true;
-          }
-        }
-        if($hasText) {
-          if($hasTags) {
+        $structure = $this->getStructure($element);
+        if($structure['hasText']) {
+          if($structure['hasTags']) {
             return $this->template->addField($element, 'wysiwyg');
-          } else if($hasBR || strlen($element->textContent) > 40) {
+          } else if($structure['hasBR'] || strlen($element->textContent) > 40) {
             return $this->template->addField($element, 'textarea');
           } else {
             return $this->template->addField($element, 'text');
@@ -79,32 +138,46 @@ class Parser {
     return NULL;
   }
 
-  private function openTag($element, $fieldId) {
+  private function getStructure($element) {
+    $structure =  array("hasText"=>false, "hasBR"=>false, "hasTags"=>false);
+    foreach($element->childNodes as $child) {
+      if(isset($child->wholeText)) { //Has a text node
+        $structure['hasText'] = true;
+      } else if($child->tagName == 'br') {
+        $structure['hasBR'] = true;
+      } else {
+        $structure['hasTags'] = true;
+      }
+    }
+    return $structure;
+  }
+
+  private function openTag($element, $fieldName) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
-    if(isset($fieldId) && isset($this->template)) {
-      $content .= " field='" . $this->template->getFieldName($fieldId) . "'";
+    if(isset($fieldName) && isset($this->template)) {
+      $content .= " field='" . $fieldName . "'";
     }
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
-        if($element->tagName == "img" && isset($fieldId)) {
-          $content .= " src='" . $this->ifACFExists($fieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'), 'fullsize'));") . "'";
+        if($element->tagName == "img" && isset($fieldName)) {
+          $content .= " src='" . $this->ifACFExists($fieldName, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $fieldName . "'), 'fullsize'));") . "'";
         } else if($this->urlIsRelative($attribute->value)) {
           $content .= " src='<?php echo get_stylesheet_directory_uri()?>/" . $attribute->value . "'";
         } else {
           $content .= " " . $attribute->name . "='" . $attribute->value . "'";
         }
       } else if($attribute->name == 'href') {
-        if($element->tagName == 'a' && isset($fieldId)) {
-          $content .= " href=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['url'];") . "\"";
-          $content .= " target=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['target'];") . "\"";
-          $content .= " alt=\"" . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['alt'];") . "\"";
+        if($element->tagName == 'a' && isset($fieldName)) {
+          $content .= " href=\"" . $this->ifACFExists($fieldName, "echo get_" . $this->getSub() . "field('" . $fieldName . "')['url'];") . "\"";
+          $content .= " target=\"" . $this->ifACFExists($fieldName, "echo get_" . $this->getSub() . "field('" . $fieldName . "')['target'];") . "\"";
+          $content .= " alt=\"" . $this->ifACFExists($fieldName, "echo get_" . $this->getSub() . "field('" . $fieldName . "')['alt'];") . "\"";
         } else if($this->urlIsRelative($attribute->value)) {
             $content .= " " . $attribute->name . "='<?php echo get_stylesheet_directory_uri()?>/" . $attribute->value . "'";
         } else {
           $content .= " " . $attribute->name . "='" . $attribute->value . "'";
         }
       } else if($attribute->name == 'style') {
-        $content .= $this->parseStyle($attribute->value, $fieldId);
+        $content .= $this->parseStyle($attribute->value, $fieldName);
       } else {
         $content .= " " . $attribute->name . "='" . $attribute->value . "'";
       }
@@ -118,15 +191,15 @@ class Parser {
     return $content;
   }
 
-  private function parseInner($element, $fieldId) {
-    if(isset($this->template) && isset($fieldId)) {
-      $type = $this->template->getFieldType($fieldId);
+  private function parseInner($element, $fieldName) {
+    if(isset($this->template) && isset($fieldName)) {
+      $type = $this->template->getFieldType($fieldName);
       if($type == 'wysiwyg') {
-        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo str_replace(array(\"\\r\\n\", \"\\n\", \"\\r\"), '', nl2br(get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "', false, false)));");
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldName, "echo str_replace(array(\"\\r\\n\", \"\\n\", \"\\r\"), '', nl2br(get_" . $this->getSub() . "field('" . $fieldName . "', false, false)));");
       } else if($type == 'textarea' || $type == 'text') {
-        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo str_replace(array(\"\\r\\n\", \"\\n\", \"\\r\"), '', get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "'));");
-      } else if($type == "a") {
-        return "\n" . $this->tabs() . $this->ifACFExists($fieldId, "echo get_" . $this->getSub() . "field('" . $this->template->getFieldName($fieldId) . "')['title'];");
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldName, "echo str_replace(array(\"\\r\\n\", \"\\n\", \"\\r\"), '', get_" . $this->getSub() . "field('" . $fieldName . "'));");
+      } else if($type == "link") {
+        return "\n" . $this->tabs() . $this->ifACFExists($fieldName, "echo get_" . $this->getSub() . "field('" . $fieldName . "')['title'];");
       }
     }
     return $this->parseChildren($element);
@@ -163,7 +236,7 @@ class Parser {
     return in_array($element->tagName, single_tags);
   }
 
-  private function parseStyle($style, $fieldId) {
+  private function parseStyle($style, $fieldName) {
     $content = " style='";
     $attributes = explode(";", $style);
     foreach($attributes as $attribute) {
@@ -174,13 +247,13 @@ class Parser {
         $urlEnd = strpos(substr($pair[1], $urlStart), ")");
         $url = trim(substr($pair[1], $urlStart, $urlEnd), "'\"");
         if(isset($this->template)) {
-          $bgFieldId = $this->template->addField(NULL, 'image', $url);
-          if($bgFieldId) {
-            $content = " bg='" . $this->template->getFieldName($bgFieldId) . "'" . $content;
-            if(!isset($fieldId)) {
+          $bgFieldName = $this->template->addField(NULL, 'image', $url);
+          if($bgFieldName) {
+            $content = " bg='" . $bgFieldName . "'" . $content;
+            if(!isset($fieldName)) {
               $content = " field" . $content;
             }
-            $url = $this->ifACFExists($bgFieldId, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $this->template->getFieldName($bgFieldId) . "'), 'fullsize'));");
+            $url = $this->ifACFExists($bgFieldName, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $bgFieldName . "'), 'fullsize'));");
             $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd) . ";";
           } else {
             $content .= $pair[1] . ";";
@@ -197,12 +270,12 @@ class Parser {
     return $content . "'";
   }
 
-  private function ifACFExists($field, $content) {
-    return  "<?php if(get_" . $this->getSub() . "field('" . $this->template->getFieldName($field) . "') !== '') { " . $content . "}?>";
+  private function ifACFExists($fieldName, $content) {
+    return  "<?php if(get_" . $this->getSub() . "field('" . $fieldName . "') !== '') { " . $content . "}?>";
   }
 
   private function getSub() {
-    return $this->inRepeater ? "sub_" : "";
+    return (isset($this->template) && isset($this->template->repeater)) ? "sub_" : "";
   }
 
   private function urlIsRelative($url) {

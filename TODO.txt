@@ -2,7 +2,13 @@ ESSENCE
 
 Bugs:
 
+Next:
+-Test deep nested repeaters
+-Saving repeater data through editor
+-Plus/clone button to add new repeating element
 
++ Set Essence Editor toolbar left coordinate
++ If no tags don't newline content
 
 
 
@@ -16,7 +22,6 @@ BENCHPRESS
 +If bg and field, add a bg image button to editor toolbar
 
 
-=> Repeaters (matching html structure? BSS parameter?)
 => Globals (matching html across pages? BSS parameter?) - look at options acf add on
 
 -----
@@ -36,6 +41,7 @@ ESSENCE EDITOR
 +Sticky edit controls bar to box when hovering over box above (extra padding causes box to move)
 +Essence logo next to WP logo in admin bar
 ?What do you do with sub text element with classes that gets overwritten by user
++ Font Awesome Icons editor
 
 -----
 CUSTOMIZER
