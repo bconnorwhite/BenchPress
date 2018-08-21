@@ -4,13 +4,10 @@ Bugs:
 
 Next:
 -Test deep nested repeaters
--Saving repeater data through editor
 -Plus/clone button to add new repeating element
 
 + Set Essence Editor toolbar left coordinate
 + If no tags don't newline content
-
-
 
 -----
 BENCHPRESS
@@ -75,7 +72,7 @@ BEST PRACTICES
 -----
 +Refactor Essence Editor js
 +Prefix all the things
-
++Add support for comments
 
 
 

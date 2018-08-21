@@ -1,6 +1,7 @@
 <?php
 
-const single_tags = ['meta', 'link', 'img', 'br'];
+const single_tags = ['meta', 'link', 'img', 'br', 'hr'];
+const no_field = ['iframe', 'script'];
 
 class Parser {
 
@@ -73,7 +74,7 @@ class Parser {
       return true;
     } else if(isset($element->tagName) && isset($sibling->tagName)) {
       if($element->tagName == $sibling->tagName) {
-        if($element->tagName == 'A') {
+        if($element->tagName == 'a') {
           return true;
         } else if(count($element->attributes) == count($sibling->attributes) && count($element->childNodes) == count($sibling->childNodes)) {
           foreach($element->attributes as $attribute) {
@@ -121,8 +122,10 @@ class Parser {
       if($element->tagName == 'a') {
         return $this->template->addField($element, 'link');
       } else if($element->tagName == 'img') {
-        return $this->template->addField($element, 'image');
-      } else {
+        if($this->urlIsRelative($element->getAttribute('src'))) {
+          return $this->template->addField($element, 'image');
+        }
+      } else if(!in_array($element->tagName, single_tags) && !in_array($element->tagName, no_field)) {
         $structure = $this->getStructure($element);
         if($structure['hasText']) {
           if($structure['hasTags']) {
@@ -143,10 +146,12 @@ class Parser {
     foreach($element->childNodes as $child) {
       if(isset($child->wholeText)) { //Has a text node
         $structure['hasText'] = true;
-      } else if($child->tagName == 'br') {
-        $structure['hasBR'] = true;
-      } else {
-        $structure['hasTags'] = true;
+      } else if(isset($child->tagName)) {
+        if($child->tagName == 'br') {
+          $structure['hasBR'] = true;
+        } else {
+          $structure['hasTags'] = true;
+        }
       }
     }
     return $structure;
@@ -299,13 +304,16 @@ class Parser {
     return $dom;
   }
 
-  //Clean of empty text nodes
+  //Clean of empty text nodes & comments
   private function cleanDOM($dom) {
     $xpath = new DOMXPath($dom);
     foreach($xpath->query('//text()') as $node) {
       if(ctype_space($node->wholeText)) {
         $node->parentNode->removeChild($node);
       }
+    }
+    foreach($xpath->query('//comment()') as $node) {
+      $node->parentNode->removeChild($node);
     }
   }
 }
