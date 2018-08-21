@@ -105,7 +105,7 @@ class Parser {
 
   private function openRepeater() {
     $fieldName = $this->template->addField(null, 'repeater');
-    $content = "\n" . $this->tabs() . "<?php while(have_rows('" . $fieldName . "')) { the_row(); ?>";
+    $content = "\n" . $this->tabs() . "<?php $" . str_replace("-", "_", $fieldName) . "_counter = -1; while(have_rows('" . $fieldName . "')) { the_row(); $" . str_replace("-", "_", $fieldName) . "_counter++; ?>";
     $this->tab++;
     return $content;
   }
@@ -152,10 +152,18 @@ class Parser {
     return $structure;
   }
 
+  private function getFieldPrefix() {
+    if(isset($this->template->repeater)) {
+      return $this->template->repeater['key'] . "_<?php echo $" . str_replace("-", "_", $this->template->repeater['key']) . "_counter; ?>_";
+    } else {
+      return "";
+    }
+  }
+
   private function openTag($element, $fieldName) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     if(isset($fieldName) && isset($this->template)) {
-      $content .= " field='" . $fieldName . "'";
+      $content .= " field='" . $this->getFieldPrefix() . $fieldName . "'";
     }
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
