@@ -136,7 +136,7 @@ class Parser {
           if($this->getStructure($element)['hasText'] && $this->getStructure($sibling)['hasText']) {
             return true;
           } else {
-            for($c=0; $c<count($element->childNodes); $c++) {
+            for($c=0; $c<count($element->childNodes); $c++) {//TODO: Use two iterators, allow for one to repeat 3x and one to repeat once, for example
               if(!$this->matchingStructure($element->childNodes[$c], $sibling->childNodes[$c])) {
                 return false;
               }

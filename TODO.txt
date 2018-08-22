@@ -3,8 +3,8 @@ ESSENCE
 Bugs:
 
 Next:
--[AB][AB] Repeater structure
--[A(b)][A(bb)] Repeater structure
+-Match single vs multiple across sub repeaters (parser.php matchingStructure())
+-AbcbcD,AbcbcD
 -Plus/clone button to add new repeating element
 
 => Dock Essence Editor toolbar to top of the screen? Otherwise set left offset
