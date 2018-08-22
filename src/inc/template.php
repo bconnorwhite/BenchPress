@@ -9,7 +9,7 @@ class Template {
   var $site;
   var $fields;
   var $meta;
-  var $repeater;
+  var $repeaterStack;
 
   function __construct($inputPath, $outputDir, $site) {
     $this->inputPath = $inputPath;
@@ -17,7 +17,7 @@ class Template {
     $this->site = $site;
     $this->fields = [];
     $this->meta = [];
-    $this->repeater = null;
+    $this->repeaterStack = array();
   }
 
   function create() {
@@ -25,7 +25,7 @@ class Template {
       $parser = new Parser(0, $this);
       $start = "<?php\n/**\n * Template Name: " . $this->getName() . " Page Template\n */\nget_header(); ?>";
       $content = $parser->parse($parser->getElementByTagName($this->inputPath, 'body'));
-      $end = "<?php get_footer(); ?>\n";
+      $end = "\n<?php get_footer(); ?>\n";
       file_put_contents($this->path, $start . $content . $end);
     }
   }
@@ -43,8 +43,8 @@ class Template {
   }
 
   function getFieldName($fieldId) {
-    if(isset($this->repeater)) {
-      return "sub-" . $fieldId;
+    if(count($this->repeaterStack) > 0) {
+      return end($this->repeaterStack)['key'] . "-" . $fieldId;
     } else {
       return $this->getGroup() . "-" . $fieldId;
     }
@@ -56,25 +56,17 @@ class Template {
   }
 
   function getFieldType($fieldName) {
-    if(isset($this->repeater)) {
-      return $this->repeater['sub_fields'][$this->getFieldId($fieldName)]['type'];
+    if(count($this->repeaterStack) > 0) {
+      return end($this->repeaterStack)['sub_fields'][$this->getFieldId($fieldName)]['type'];
     } else {
       return $this->fields[$this->getFieldId($fieldName)-1]['type'];
     }
   }
 
-  function loopRepeater() {
-    if(isset($this->repeater)) {
-      $this->repeater['temp']['field'] = 0;
-      $this->repeater['temp']['counter'] += 1;
-    }
-  }
-
   function addField($element, $type, $bgURL=false) { //$bg only used if $type == 'image'
     $fieldId = null;
-    if(isset($this->repeater)) {
-      $fieldId = $this->repeater['temp']['field'];
-      $this->repeater['temp']['field'] += 1;
+    if(count($this->repeaterStack) > 0) {
+      $fieldId = end($this->repeaterStack)['temp']['field'];
     } else {
       $fieldId = count($this->fields) + 1;
     }
@@ -85,8 +77,8 @@ class Template {
       'type' => $type,
     );
     if($type == 'repeater') {
+      $settings['temp'] = array("cycle"=>0, "field"=>0);
       $settings['sub_fields'] = array();
-      $settings['temp'] = array("counter"=>0, "field"=>0, "parent"=>&$this->repeater);
     } else if($type == 'link') {
       $settings['return_format'] = 'array';
       $attributes = array("title"=>$element->textContent);
@@ -124,39 +116,63 @@ class Template {
       $settings['media_upload'] = 0;
       $this->addMeta($fieldId, trim($this->br2nl($this->innerHTML($element))));
     }
-    if(isset($this->repeater)) {
-      if($this->repeater['temp']['counter'] == 0) {
-        array_push($this->repeater['sub_fields'], $settings);
+    if(count($this->repeaterStack) > 0) {
+      $this->repeaterStack[count($this->repeaterStack)-1]['temp']['field'] += 1;
+      if($type == 'repeater') {
+        array_push($this->repeaterStack, $settings);
+      } else if(end($this->repeaterStack)['temp']['cycle'] == 0) { //First cycle
+        array_push($this->repeaterStack[count($this->repeaterStack)-1]['sub_fields'], $settings);
       }
     } else {
       $settings['parent'] = $this->getGroup();
-      array_push($this->fields, $settings);
-    }
-    if($type == 'repeater') {
-      $this->repeater = &$this->fields[count($this->fields)-1];
+      if($type == 'repeater') {
+        array_push($this->repeaterStack, $settings);
+      } else {
+        array_push($this->fields, $settings);
+      }
     }
     return $settings['key'];
   }
 
+  function loopRepeater() {
+    if(count($this->repeaterStack) > 0) {
+      $this->repeaterStack[count($this->repeaterStack)-1]['temp']['cycle'] += 1;
+      $this->repeaterStack[count($this->repeaterStack)-1]['temp']['field'] = 0;
+    }
+  }
+
   function closeRepeater() {
-    if(isset($this->repeater)) {
-      array_push($this->meta, array("key"=>$this->repeater['key'], "value"=>($this->repeater['temp']['counter']+1)));
-      if(isset($this->repeater['parent'])) {
-        unset($this->repeater['temp']);
-        unset($this->repeater);
-      } else {
-        $temp = &$this->repeater['temp'];
-        $this->repeater = $this->repeater['temp']['parent'];
-        unset($temp);
+    if(count($this->repeaterStack) > 0) {
+      array_push($this->meta, array("key"=>$this->getRepeaterKey(), "value"=>(end($this->repeaterStack)['temp']['cycle'])));
+      unset($this->repeaterStack[count($this->repeaterStack)-1]['temp']);
+      if(count($this->repeaterStack) == 1) {
+        array_push($this->fields, $this->repeaterStack[count($this->repeaterStack)-1]);
+      } else if($this->repeaterStack[count($this->repeaterStack)-2]['temp']['cycle'] == 0) {
+        array_push($this->repeaterStack[count($this->repeaterStack)-2]['sub_fields'], $this->repeaterStack[count($this->repeaterStack)-1]);
       }
+      array_pop($this->repeaterStack);
     } else {
       printError("ERROR: template.php: closeRepeater()");
     }
   }
 
+  private function getRepeaterKey($fieldId=false) {
+    $key = "";
+    for($r=0; $r<count($this->repeaterStack); $r++) {
+      $key .= $this->repeaterStack[$r]['key'];
+      if(!($fieldId===false) || $r<count($this->repeaterStack)-1) {
+        $key .= "_" . $this->repeaterStack[$r]['temp']['cycle'] . "_";
+      }
+    }
+    if(!($fieldId===false)) {
+      $key .= $this->getFieldName($fieldId);
+    }
+    return $key;
+  }
+
   private function addMeta($fieldId, $value) {
-    if(isset($this->repeater)) {
-      array_push($this->meta, array("key"=> $this->repeater['key'] . "_" . $this->repeater['temp']['counter'] . "_" . $this->getFieldName($fieldId), "value"=>$value));
+    if(count($this->repeaterStack) > 0) {
+      array_push($this->meta, array("key"=> $this->getRepeaterKey($fieldId), "value"=>$value));
     } else {
       array_push($this->meta, array("key"=>$this->getFieldName($fieldId), "value"=>$value));
     }

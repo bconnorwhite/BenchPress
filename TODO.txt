@@ -3,11 +3,12 @@ ESSENCE
 Bugs:
 
 Next:
--Test deep nested repeaters
+-[AB][AB] Repeater structure
+-[A(b)][A(bb)] Repeater structure
 -Plus/clone button to add new repeating element
 
-+ Set Essence Editor toolbar left coordinate
-+ If no tags don't newline content
+=> Dock Essence Editor toolbar to top of the screen? Otherwise set left offset
++ If no inner tags don't newline content
 
 -----
 BENCHPRESS
@@ -19,7 +20,8 @@ BENCHPRESS
 +If bg and field, add a bg image button to editor toolbar
 
 
-=> Globals (matching html across pages? BSS parameter?) - look at options acf add on
+=> Globals (matching id + structure across pages) - look at options acf add-on
+	-Basically just make section with the id container using a global group, add pages as necessary to acf.php
 
 -----
 ESSENCE BASE THEME
@@ -62,7 +64,7 @@ Businesses
 Photographers
 Developers (eventually)
 
-Essence Editor
+Essence Editor (gif of it in action on homepage, Essence Editor page to try it out)
 Essence Hosting
 
 

@@ -8,10 +8,12 @@ class Parser {
   var $template;
 
   private $tab;
+  private $repeaterStack;
 
   function __construct($tab, $template=NULL) {
     $this->tab = $tab;
     $this->template = $template;
+    $this->repeaterStack = array();
   }
 
   function getElementByTagName($inputPath, $tagName) {
@@ -30,23 +32,43 @@ class Parser {
       if(isset($element->wholeText)) {
         $content .= $element->wholeText;
       } else if(isset($element->tagName)) {
-        $fieldName = $this->getFieldName($element);
-        $firstInRepeater = $this->firstInRepeater($element);
-        if($firstInRepeater) {
+        //Start repeater?
+        $cycleLength = false;
+        if(!isset($element->previousSibling)) { //First child
+          $cycleLength = $this->matchesForward($element);
+          array_push($this->repeaterStack, array("cycleLength"=>$cycleLength, "cycle"=>0, "counter"=>0));
+        } else if(end($this->repeaterStack)["cycleLength"] == false) { //Not in same repeater as previous sibling
+          $cycleLength = $this->matchesForward($element);
+          $this->repeaterStack[count($this->repeaterStack)-1] = array("cycleLength"=>$cycleLength, "cycle"=>0, "counter"=>0);
+        }
+        if($cycleLength) {
           $content .= $this->openRepeater();
         }
+        //Content
+        $fieldName = $this->getFieldName($element);
         $content .= $this->openTag($element, $fieldName);
         if(!$this->isSingleTag($element)) {
           $content .= $this->parseInner($element, $fieldName);
           $content .= $this->closeTag($element);
         }
-        if($this->lastInRepeater($element)) {
-          $content = $this->closeRepeater(); //If last only return close to the repeater
-        } else if($this->inRepeater($element)) {
-          $this->template->loopRepeater();
-          if(!$firstInRepeater) { //Only return if first or last in repeater
-            return "";
+        //End repeater?
+        if(end($this->repeaterStack)["cycleLength"]) { //In a repeater
+          if(end($this->repeaterStack)['cycle'] > 0) { //Not first cycle
+            $content = ""; //Don't add content
           }
+          if(end($this->repeaterStack)['counter'] == end($this->repeaterStack)['cycleLength']-1) { //Last of current cycle
+            $this->template->loopRepeater();
+            if(!$this->matchesForward($this->getFirstInCycle($element))) { //Last cycle
+              $content = $this->closeRepeater();
+            }
+            $this->repeaterStack[count($this->repeaterStack)-1]["cycle"]++;
+            $this->repeaterStack[count($this->repeaterStack)-1]["counter"] = 0;
+          } else {
+            $this->repeaterStack[count($this->repeaterStack)-1]["counter"]++;
+          }
+        }
+        if(!isset($element->nextSibling)) {
+          array_pop($this->repeaterStack);
         }
       }
     }
@@ -57,16 +79,45 @@ class Parser {
   * Private Functions
   ---------- */
 
-  private function firstInRepeater($element) {
-    return isset($this->template) && isset($element->nextSibling) && $this->matchingStructure($element, $element->nextSibling) && (!isset($element->previousSibling) || !$this->matchingStructure($element, $element->previousSibling));
+  private function getFirstInCycle($element) {
+    for($p = end($this->repeaterStack)['cycleLength'] - 1; $p > 0; $p--) {
+      if(isset($element->previousSibling)) {
+        $element = $element->previousSibling;
+      } else {
+        printError("ERROR: parser.php : getFirstInCycle()");
+        return NULL;
+      }
+    }
+    return $element;
   }
 
-  private function lastInRepeater($element) {
-    return isset($this->template) && isset($element->previousSibling) && $this->matchingStructure($element, $element->previousSibling) && (!isset($element->nextSibling) || !$this->matchingStructure($element, $element->nextSibling));
-  }
-
-  private function inRepeater($element) {
-    return isset($this->template) && (isset($element->previousSibling) && $this->matchingStructure($element, $element->previousSibling)) || (isset($element->nextSibling) && $this->matchingStructure($element, $element->nextSibling));
+  //Returns # of elements per repeater cycle, or false if no cycle
+  private function matchesForward($element) {
+    for($n=1; 1<2; $n++) { //TODO: Should probably start high and decrement, (look for longer repeaters first - ABABC,ABABC not AB,AB)
+      $sets = [array(), array()];
+      $nextElement = $element;
+      for($s=0; $s<2; $s++) {
+        for($e=0; $e<$n; $e++) {
+          array_push($sets[$s], $nextElement);
+          if($s==0) {
+            if(isset($nextElement->nextSibling)) {
+              $nextElement = $nextElement->nextSibling;
+            } else {
+              return false;
+            }
+          }
+        }
+      }
+      for($e=0; $e<$n; $e++) {
+        $allMatching = true;
+        if(!$this->matchingStructure($sets[0][$e], $sets[1][$e])) {
+          $allMatching = false;
+        }
+        if($allMatching) {
+          return $n;
+        }
+      }
+    }
   }
 
   private function matchingStructure($element, $sibling) {
@@ -113,6 +164,7 @@ class Parser {
 
   private function closeRepeater() {
     $this->template->closeRepeater();
+    $this->repeaterStack[count($this->repeaterStack)-1] = array("cycleLength"=>false, "cycle"=>0, "counter"=>0);
     $this->tab--;
     return "\n" . $this->tabs() . "<?php } ?>";
   }
@@ -127,7 +179,7 @@ class Parser {
         }
       } else if(!in_array($element->tagName, single_tags) && !in_array($element->tagName, no_field)) {
         $structure = $this->getStructure($element);
-        if($structure['hasText']) {
+        if($structure['hasText']) { //Immediate children include text nodes
           if($structure['hasTags']) {
             return $this->template->addField($element, 'wysiwyg');
           } else if($structure['hasBR'] || strlen($element->textContent) > 40) {
@@ -158,8 +210,8 @@ class Parser {
   }
 
   private function getFieldPrefix() {
-    if(isset($this->template->repeater)) {
-      return $this->template->repeater['key'] . "_<?php echo $" . str_replace("-", "_", $this->template->repeater['key']) . "_counter; ?>_";
+    if(count($this->repeaterStack) > 0) {
+      return end($this->template->repeaterStack)['key'] . "_<?php echo $" . str_replace("-", "_", end($this->template->repeaterStack)['key']) . "_counter; ?>_";
     } else {
       return "";
     }
@@ -288,7 +340,7 @@ class Parser {
   }
 
   private function getSub() {
-    return (isset($this->template) && isset($this->template->repeater)) ? "sub_" : "";
+    return (isset($this->template) && count($this->repeaterStack) > 0) ? "sub_" : "";
   }
 
   private function urlIsRelative($url) {
