@@ -36,9 +36,11 @@ class Parser {
         $cycleLength = false;
         if(!isset($element->previousSibling)) { //First child
           $cycleLength = $this->matchesForward($element);
+          $cycleLength = $cycleLength ? $cycleLength : $element->getAttribute('repeater');
           array_push($this->repeaterStack, array("cycleLength"=>$cycleLength, "cycle"=>0, "counter"=>0));
         } else if(end($this->repeaterStack)["cycleLength"] == false) { //Not in same repeater as previous sibling
           $cycleLength = $this->matchesForward($element);
+          $cycleLength = $cycleLength ? $cycleLength : $element->getAttribute('repeater');
           $this->repeaterStack[count($this->repeaterStack)-1] = array("cycleLength"=>$cycleLength, "cycle"=>0, "counter"=>0);
         }
         if($cycleLength) {
@@ -93,66 +95,105 @@ class Parser {
 
   //Returns # of elements per repeater cycle, or false if no cycle
   private function matchesForward($element) {
-    for($n=1; 1<2; $n++) { //TODO: Should probably start high and decrement, (look for longer repeaters first - ABABC,ABABC not AB,AB)
+    //Build sets of adjacent elements, increasing in size, and check for match between the sets
+    for($setLength=1; 1<2; $setLength++) { //TODO: Should probably start high and decrement, (look for longer repeaters first - ABABC,ABABC not AB,AB)
       $sets = [array(), array()];
       $nextElement = $element;
-      for($s=0; $s<2; $s++) {
-        for($e=0; $e<$n; $e++) {
-          array_push($sets[$s], $nextElement);
-          if($s==0) {
+      for($set=0; $set<2; $set++) {
+        for($e=0; $e<$setLength; $e++) {
+          array_push($sets[$set], $nextElement);
+          if($set==0) {
             if(isset($nextElement->nextSibling)) {
               $nextElement = $nextElement->nextSibling;
-            } else {
+            } else { //Using two sets overlaps end of siblings
               return false;
             }
           }
         }
       }
-      for($e=0; $e<$n; $e++) {
+      for($e=0; $e<$setLength; $e++) {
         $allMatching = true;
         if(!$this->matchingStructure($sets[0][$e], $sets[1][$e])) {
           $allMatching = false;
         }
         if($allMatching) {
-          return $n;
+          return $setLength;
         }
       }
     }
   }
 
-  private function matchingStructure($element, $sibling) {
+  private function matchingStructure($element, $sibling, $debug=false) {
     if(isset($element->wholeText) || isset($sibling->wholeText)) {
       return true;
     } else if(isset($element->tagName) && isset($sibling->tagName)) {
       if($element->tagName == $sibling->tagName) {
         if($element->tagName == 'a') {
           return true;
-        } else if(count($element->attributes) == count($sibling->attributes) && count($element->childNodes) == count($sibling->childNodes)) {
+        } else {
           foreach($element->attributes as $attribute) {
-            if(!isset($sibling->attributes[$attribute->name]) || $sibling->getAttribute($attribute->name) !== $attribute->value) {
+            if($attribute->name !== 'repeater' && (!isset($sibling->attributes[$attribute->name]) || $sibling->getAttribute($attribute->name) !== $attribute->value)) {
+              return false;
+            }
+          }
+          foreach($sibling->attributes as $attribute) {
+            if($attribute->name !== 'repeater' && (!isset($element->attributes[$attribute->name]) || $element->getAttribute($attribute->name) !== $attribute->value)) {
               return false;
             }
           }
           if($this->getStructure($element)['hasText'] && $this->getStructure($sibling)['hasText']) {
             return true;
           } else {
-            for($c=0; $c<count($element->childNodes); $c++) {//TODO: Use two iterators, allow for one to repeat 3x and one to repeat once, for example
-              if(!$this->matchingStructure($element->childNodes[$c], $sibling->childNodes[$c])) {
+            $e = $s = 0;
+            $lastForward = false;
+            while($e<count($element->childNodes) || $s<count($sibling->childNodes)) {
+              $eChild = $e<count($element->childNodes) ? $element->childNodes[$e] : NULL;
+              $sChild = $s<count($sibling->childNodes) ? $sibling->childNodes[$s] : NULL;
+              if($this->matchingStructure($eChild, $sChild)) {
+                $forwardE = $this->matchesForward($eChild);
+                $forwardS = $this->matchesForward($sChild);
+                $lastForward = max($forwardE, $forwardS);
+                if($forwardE == $forwardS || $this->verifyForwardMatch($eChild, $sChild, $lastForward)) {
+                  if($forwardE && !$forwardS) {
+                    $sibling->childNodes[$s]->setAttribute('repeater', $forwardE);
+                  } else if($forwardS && !$forwardE) {
+                    $element->childNodes[$e]->setAttribute('repeater', $forwardS);
+                  }
+                  $e += $lastForward ? $lastForward : 1;
+                  $s += $lastForward ? $lastForward : 1;
+                } else {
+                  return false;
+                }
+              } else if($this->matchingStructure($eChild, $sibling->childNodes[$s-($lastForward ? $lastForward : 1)])) {
+                $e += ($lastForward ? $lastForward : 1);
+              } else if($this->matchingStructure($element->childNodes[$e-($lastForward ? $lastForward : 1)], $sChild, true)) {
+                $s += ($lastForward ? $lastForward : 1);
+              } else {
                 return false;
               }
             }
-            return true;
           }
+          return true;
         }
       } else {
         return false;
       }
-    } else { //Shouldn't happen...
-      printError("ERROR: parser.php: matchingStructure()", failure_color);
-      var_dump($element);
-      var_dump($sibling);
+    } else {
       return false;
     }
+  }
+
+  private function verifyForwardMatch($element, $sibling, $count) {
+    while($count > 0) {
+      if($this->matchingStructure($element, $sibling)) {
+        $count--;
+        $element = $element->nextSibling;
+        $sibling = $sibling->nextSibling;
+      } else {
+        return false;
+      }
+    }
+    return true;
   }
 
   private function openRepeater() {
