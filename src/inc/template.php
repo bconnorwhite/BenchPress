@@ -108,7 +108,6 @@ class Template {
         $this->addMeta($fieldId, $wpId);
       }
     } else if($type == 'text') {
-      printLine($fieldId);
       $this->addMeta($fieldId, trim($element->textContent));
     } else if($type == 'textarea') {
       $settings['new_lines'] = 'br';
@@ -151,7 +150,6 @@ class Template {
       } else if($this->repeaterStack[count($this->repeaterStack)-2]['temp']['cycle'] == 0) {
         array_push($this->repeaterStack[count($this->repeaterStack)-2]['sub_fields'], $this->repeaterStack[count($this->repeaterStack)-1]);
       }
-      printLine("POP");
       array_pop($this->repeaterStack);
     } else {
       printError("ERROR: template.php: closeRepeater()");

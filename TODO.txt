@@ -76,10 +76,6 @@ BEST PRACTICES
 +Add support for comments
 
 
-
-
-
-
 -----
 Stretch:
 -----
