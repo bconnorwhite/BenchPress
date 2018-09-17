@@ -269,7 +269,10 @@ class Parser {
   private function openTag($element, $fieldName) {
     $content = "\n" . $this->tabs() . "<" . $element->tagName;
     if(isset($fieldName) && isset($this->template)) {
-      $content .= " field='" . $this->getFieldPrefix() . $fieldName . "'";
+      $field = $this->getFieldPrefix() . $fieldName;
+      if($field !== "") {
+        $content .= " field='" . $field . "'";
+      }
     }
     foreach($element->attributes as $attribute) {
       if($attribute->name == 'src') {
@@ -364,9 +367,6 @@ class Parser {
           $bgFieldName = $this->template->addField(NULL, 'image', $url);
           if($bgFieldName) {
             $content = " bg='" . $bgFieldName . "'" . $content;
-            if(!isset($fieldName)) {
-              $content = " field" . $content;
-            }
             $url = $this->ifACFExists($bgFieldName, "echo(wp_get_attachment_image_url(get_" . $this->getSub() . "field('" . $bgFieldName . "'), 'fullsize'));");
             $content .= substr($pair[1], 0, $urlStart) . $url . ")" . substr($pair[0], $urlEnd) . ";";
           } else {
