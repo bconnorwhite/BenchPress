@@ -32,7 +32,6 @@ class Parser {
       if(isset($element->wholeText)) {
         $content .= $element->wholeText;
       } else if(isset($element->tagName)) {
-        printLine($element->tagName);
         //Start repeater?
         $cycleLength = false;
         if(!isset($element->previousSibling) || count($this->repeaterStack) == 0) { //First child
@@ -202,7 +201,6 @@ class Parser {
   }
 
   private function openRepeater() {
-    printLine("openRepeater()");
     $fieldName = $this->template->addField(null, 'repeater');
     $content = "\n" . $this->tabs() . "<?php $" . str_replace("-", "_", $fieldName) . "_counter = -1; while(have_rows('" . $fieldName . "')) { the_row(); $" . str_replace("-", "_", $fieldName) . "_counter++; ?>";
     $this->tab++;
@@ -210,7 +208,6 @@ class Parser {
   }
 
   private function closeRepeater() {
-    printLine("closeRepeater()");
     $this->template->closeRepeater();
     if(count($this->repeaterStack) < 1) {
       printError('ERROR: parser.php: closeRepeater() - trying to close missing repeater');
