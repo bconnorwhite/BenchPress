@@ -57,10 +57,12 @@ button.components-toolbar__control.components-button[data-command=unlink].essenc
 #essence-content-toolbar span.dashicons:before {
 	left: -3px;
 	top: -1px;
-    position: relative;
+  position: relative;
 }
 #essence-content-toolbar {
-	position: absolute;
+	position: fixed;
+  top: 32px;
+  z-index: 9999;
 	transform: translate(-1px, 0px);
 }
 #essence-content-toolbar .editor-block-toolbar {
