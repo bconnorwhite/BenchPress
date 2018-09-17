@@ -1,13 +1,9 @@
 ESSENCE
 
-Bugs:
-
 Next:
--KHA test
+-Edit BG Images
 -Plus/clone button to add new repeating element
-
-=> Dock Essence Editor toolbar to top of the screen? Otherwise set left offset
-+ If no inner tags don't newline content
+-Globals
 
 -----
 BENCHPRESS
@@ -40,6 +36,8 @@ ESSENCE EDITOR
 +Essence logo next to WP logo in admin bar
 ?What do you do with sub text element with classes that gets overwritten by user
 + Font Awesome Icons editor
++ When editing, use cursor: context-menu; on html element
++ Probably eventually want a full width editor toolbar so it doesn't overlap anything in the top left corner of the page
 
 -----
 CUSTOMIZER
