@@ -213,23 +213,35 @@ function restoreSelection(range) {
 }
 
 function unfocusField(e) {
-	if(hasParentId(e.relatedTarget, 'essence-content-toolbar')) {
-		if(e.relatedTarget.getAttribute("data-command") == 'createlink') {
-			selectionRange = saveSelection();
+	if(e.relatedTarget !== null) {
+		if(hasParentId(e.relatedTarget, 'essence-content-toolbar')) {
+			if(e.relatedTarget.getAttribute("data-command") == 'createlink') {
+				selectionRange = saveSelection();
+			} else {
+				e.target.focus();
+				execCommand(e.target, e.relatedTarget.getAttribute("data-command"));
+			}
 		} else {
+			closeToolbar(e.target);
+		}
+		window.setTimeout(function(){ //unfocus any fields that get focused by clicking out
+			var fields = document.querySelectorAll('[field]');
+			for(var f=0; f<fields.length; f++) {
+				fields[f].blur();
+			}
+		}, 0);//Somehow this works with 0 delay, but without the timeout it doesn't work.
+	} else if(e.target !== null) {
+		if(e.sourceCapabilities == null) { //Not mouse driven
 			e.target.focus();
-			execCommand(e.target, e.relatedTarget.getAttribute("data-command"));
+		} else {
+			closeToolbar(e.target);
 		}
-	} else {
-		e.target.removeEventListener("focusout", unfocusField);
-		toolbar.parentNode.removeChild(toolbar);
 	}
-	window.setTimeout(function(){ //unfocus any fields that get focused by clicking out
-		var fields = document.querySelectorAll('[field]');
-		for(var f=0; f<fields.length; f++) {
-			fields[f].blur();
-		}
-	}, 0);//Somehow this works with 0 delay, but without the timeout it doesn't work.
+}
+
+function closeToolbar(target) {
+	target.removeEventListener("focusout", unfocusField);
+	toolbar.parentNode.removeChild(toolbar);
 }
 
 function hasParentId(element, id) {
