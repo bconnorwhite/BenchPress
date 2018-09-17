@@ -132,11 +132,6 @@ function openToolbar(field) {
 		toolbar.id = 'essence-content-toolbar';
 		toolbar.innerHTML = contentEditor;
 		document.body.insertBefore(toolbar, document.body.childNodes[0]);
-		var top = (field.getBoundingClientRect().top - toolbar.clientHeight);
-		if(top < document.getElementById('wpadminbar').getBoundingClientRect().bottom) {
-			top = field.getBoundingClientRect().bottom;
-		}
-		toolbar.style.top = top + "px";
 		jQuery('#essence-content-toolbar-createlink').click(function(){
 			wpLink.open('essence-content-linkarea');
 			return false;
