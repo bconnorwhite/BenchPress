@@ -11,17 +11,27 @@
 	display: none;
 }
 
-[field] {
+[field],
+[bg] {
 	outline: 1px solid transparent;
 }
-[field][contenteditable] {
+[field][contenteditable],
+[bg][editable] {
 	transition: 0.15s ease;
 }
-[field][contenteditable=true]:hover {
+[field][contenteditable] {
+	cursor: text;
+}
+[bg][editable] {
+	cursor: pointer;
+}
+[field][contenteditable=true]:hover,
+[bg][editable]:hover {
 	outline: 1px solid #00A0D2;
 	padding: 0.5em;
 }
-[field][contenteditable=true]:focus {
+[field][contenteditable=true]:focus,
+[bg][editable]:focus {
 	outline: 1px solid #e2e4e7;
 	padding: 0.5em;
 }

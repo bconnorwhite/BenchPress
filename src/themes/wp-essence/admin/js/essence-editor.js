@@ -39,6 +39,11 @@ function toggleEditMode() {
 				}
 			}
 		}
+		var bgImages = document.querySelectorAll('[bg]');
+		for(var b=0; b<bgImages.length; b++) {
+			bgImages[b].setAttribute('editable', true);
+			bgImages[b].addEventListener("mousedown", bgMousedown);
+		}
 	} else if(editing) {
 		stopEditing();
 		var meta = {};
@@ -58,6 +63,12 @@ function toggleEditMode() {
 				}
 			} else {
 				meta[fields[f].getAttribute('field')] = fields[f].innerHTML.trim().replace(/<br ?\/?>/g, "\n");
+			}
+		}
+		var bgImages = document.querySelectorAll('[bg]');
+		for(var b=0; b<bgImages.length; b++) {
+			if(bgImages[b].getAttribute('media-id')) {
+				meta[bgImages[b].getAttribute('bg')] = bgImages[b].getAttribute('media-id');
 			}
 		}
 		saveUpdates(meta);
@@ -91,23 +102,29 @@ function clearSelection() {
  }
 }
 
+function bgMousedown(e) {
+	var bg = getParentField(e.target);
+	console.log(bg);
+	if(bg && bg.getAttribute('bg')) {
+		fileFrame.on('select', function() {
+			var attatchment = fileFrame.state().get('selection').first().toJSON();
+			bg.style.backgroundImage = attatchment.url ? "url(" + attatchment.url + ")" : "";
+			bg.setAttribute('media-id', attatchment.id);
+		});
+		fileFrame.open();
+	}
+}
+
 function fieldMousedown(e) {
 	var field = getParentField(e.target);
 	if(field) {
-		if(e.target.tagName == 'IMG' || e.target.getAttribute('bg')) {
+		if(e.target.tagName == 'IMG') {
 			field = e.target;
 		}
 		if(e.target.tagName == 'IMG') {
 			fileFrame.on('select', function() {
 				var attatchment = fileFrame.state().get('selection').first().toJSON();
 				field.src = attatchment.url;
-				field.setAttribute('media-id', attatchment.id);
-			});
-			fileFrame.open();
-		} else if(e.target.getAttribute('bg')) {
-			fileFrame.on('select', function() {
-				var attatchment = fileFrame.state().get('selection').first().toJSON();
-				field.style.backgroundImage = attatchment.url ? "url(" + attatchment.url + ")" : "";
 				field.setAttribute('media-id', attatchment.id);
 			});
 			fileFrame.open();
@@ -178,7 +195,7 @@ function hasParentTag(element, tagname) {
 function getParentField(element) {
 	if(!element) {
 		return false;
-	} else if(element.hasAttribute('field')) {
+	} else if(element.hasAttribute('field') || element.hasAttribute('bg')) {
 		return element;
 	} else {
 		return element.parentNode && getParentField(element.parentNode);

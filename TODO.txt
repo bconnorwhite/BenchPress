@@ -1,7 +1,6 @@
 ESSENCE
 
 Next:
--Edit BG Images
 -Plus/clone button to add new repeating element
 -Globals
 
